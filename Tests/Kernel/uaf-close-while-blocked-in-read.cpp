@@ -16,7 +16,6 @@ int main(int, char**)
             printf("Second thread closing pipes!\n");
             close(pipefds[0]);
             close(pipefds[1]);
-            pthread_exit(nullptr);
             return nullptr;
         },
         nullptr);

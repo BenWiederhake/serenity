@@ -24,8 +24,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <pthread.h>
 #include <assert.h>
+#include <pthread.h>
 #include <signal.h>
 #include <stdio.h>
 #include <time.h>
@@ -74,15 +74,11 @@ static void* yanker_fn(void* shared_)
     pid_t child_pid = fork();
     if (child_pid < 0) {
         printf("Yanker: Fork failed: %d\n", child_pid);
-        pthread_exit(nullptr); // See below
         return nullptr;
     }
 
     if (child_pid > 0) {
         // Success.  Terminate quickly.  T3
-        // FIXME: LibPthread bug: returning during normal operation causes nullptr deref.
-        // Workaround: Exit manually.
-        pthread_exit(nullptr);
         return nullptr;
     }
 
@@ -105,9 +101,7 @@ static void* yanker_fn(void* shared_)
         return nullptr;
     }
 
-    pthread_exit(nullptr);
-    assert(false);
-    // FIXME: return nullptr;
+    return nullptr;
 }
 
 int main()

@@ -55,8 +55,7 @@ int main(int argc, char** argv)
     int rc = pthread_create(
         &thread_id, nullptr, [](void*) -> void* {
             printf("Hi there, from the second thread!\n");
-            pthread_exit((void*)0xDEADBEEF);
-            return nullptr;
+            return (void*)0xDEADBEEF;
         },
         nullptr);
     if (rc < 0) {
@@ -94,8 +93,7 @@ int mutex_test()
                 pthread_mutex_unlock(&mutex);
                 sleep(1);
             }
-            pthread_exit((void*)0xDEADBEEF);
-            return nullptr;
+            return (void*)0xDEADBEEF;
         },
         nullptr);
     if (rc < 0) {
@@ -116,14 +114,14 @@ int detached_test()
     pthread_attr_t attributes;
     int rc = pthread_attr_init(&attributes);
     if (rc != 0) {
-        printf("pthread_attr_setdetachstate: %s\n", strerror(rc));
+        printf("pthread_attr_init: %s\n", strerror(rc));
         return 1;
     }
 
     int detach_state = 99; // clearly invalid
     rc = pthread_attr_getdetachstate(&attributes, &detach_state);
     if (rc != 0) {
-        printf("pthread_attr_setdetachstate: %s\n", strerror(rc));
+        printf("pthread_attr_getdetachstate: %s\n", strerror(rc));
         return 2;
     }
     printf("Default detach state: %s\n", detach_state == PTHREAD_CREATE_JOINABLE ? "joinable" : "detached");
@@ -141,8 +139,7 @@ int detached_test()
         &thread_id, &attributes, [](void*) -> void* {
             printf("I'm the secondary thread :^)\n");
             sleep(1);
-            pthread_exit((void*)0xDEADBEEF);
-            return nullptr;
+            return (void*)0xDEADBEEF;
         },
         nullptr);
     if (rc < 0) {
@@ -204,8 +201,7 @@ int priority_test()
         &thread_id, &attributes, [](void*) -> void* {
             printf("I'm the secondary thread :^)\n");
             sleep(1);
-            pthread_exit((void*)0xDEADBEEF);
-            return nullptr;
+            return (void*)0xDEADBEEF;
         },
         nullptr);
     if (rc < 0) {
@@ -258,8 +254,7 @@ int stack_size_test()
         &thread_id, &attributes, [](void*) -> void* {
             printf("I'm the secondary thread :^)\n");
             sleep(1);
-            pthread_exit((void*)0xDEADBEEF);
-            return nullptr;
+            return (void*)0xDEADBEEF;
         },
         nullptr);
     if (rc < 0) {
@@ -325,8 +320,7 @@ int set_stack_test()
         &thread_id, &attributes, [](void*) -> void* {
             printf("I'm the secondary thread :^)\n");
             sleep(1);
-            pthread_exit((void*)0xDEADBEEF);
-            return nullptr;
+            return (void*)0xDEADBEEF;
         },
         nullptr);
     if (rc < 0) {

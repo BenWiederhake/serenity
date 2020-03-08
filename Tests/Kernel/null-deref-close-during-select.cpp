@@ -15,7 +15,6 @@ int main(int, char**)
             sleep(1);
             printf("ST: close()\n");
             close(pipefds[1]);
-            pthread_exit(nullptr);
             return nullptr;
         },
         nullptr);

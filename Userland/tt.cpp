@@ -124,13 +124,15 @@ int detached_test()
         printf("pthread_attr_getdetachstate: %s\n", strerror(rc));
         return 2;
     }
-    printf("Default detach state: %s\n", detach_state == PTHREAD_CREATE_JOINABLE ? "joinable" : "detached");
+    printf("Default detach state: %s (%d)\n", detach_state == PTHREAD_CREATE_JOINABLE ? "joinable" : "detached", detach_state);
+    if (detach_state != PTHREAD_CREATE_JOINABLE)
+        return 3;
 
     detach_state = PTHREAD_CREATE_DETACHED;
     rc = pthread_attr_setdetachstate(&attributes, detach_state);
     if (rc != 0) {
         printf("pthread_attr_setdetachstate: %s\n", strerror(rc));
-        return 3;
+        return 4;
     }
     printf("Set detach state on new thread to detached\n");
 
@@ -144,18 +146,14 @@ int detached_test()
         nullptr);
     if (rc < 0) {
         perror("pthread_create");
-        return 4;
+        return 5;
     }
 
     void* ret_val;
     errno = 0;
     rc = pthread_join(thread_id, &ret_val);
-    if (rc < 0 && errno != EINVAL) {
-        perror("pthread_join");
-        return 5;
-    }
-    if (errno != EINVAL) {
-        printf("Expected EINVAL! Thread was joinable?\n");
+    if (rc != -EINVAL) {
+        printf("Expected EINVAL! Thread was joinable? rc=%d, errno=%d\n", rc, errno);
         return 6;
     }
 

@@ -48,8 +48,6 @@ constexpr size_t required_stack_alignment = 4 * MB;
 constexpr size_t highest_reasonable_guard_size = 32 * PAGE_SIZE;
 constexpr size_t highest_reasonable_stack_size = 8 * MB; // That's the default in Ubuntu?
 
-extern "C" {
-
 static int create_thread(void* (*entry)(void*), void* argument, void* thread_params)
 {
     return syscall(SC_create_thread, entry, argument, thread_params);
@@ -61,6 +59,33 @@ static void exit_thread(void* code)
     ASSERT_NOT_REACHED();
 }
 
+struct PthreadTrampoline {
+    void* (*start_routine)(void*);
+    void* argument_to_start_routine;
+    // void* stack;
+    // size_t stacksize;
+};
+
+static void* pthread_trampoline(void* trampoline)
+{
+    PthreadTrampoline* use_trampoline = static_cast<PthreadTrampoline*>(trampoline);
+    void* (*start_routine)(void*) = use_trampoline->start_routine;
+    void* argument_to_start_routine = use_trampoline->argument_to_start_routine;
+    // void* stack = use_trampoline->stack;
+    // size_t stacksize = use_trampoline->stacksize;
+    delete use_trampoline;
+
+    void* result = start_routine(argument_to_start_routine);
+    exit_thread(result);
+    ASSERT_NOT_REACHED();
+    // FIXME: Delete stack *after* exiting, which is impossible.
+    // It would look something like this:
+    // if (stack)
+    //     munmap(stack, stacksize);
+}
+
+extern "C" {
+
 int pthread_self()
 {
     return gettid();
@@ -71,34 +96,56 @@ int pthread_create(pthread_t* thread, pthread_attr_t* attributes, void* (*start_
     if (!thread)
         return -EINVAL;
 
-    PthreadAttrImpl default_attributes {};
+    PthreadAttrImpl use_attributes {};
+
     PthreadAttrImpl** arg_attributes = reinterpret_cast<PthreadAttrImpl**>(attributes);
+    if (arg_attributes) {
+        PthreadAttrImpl* given_attributes = *arg_attributes;
+        memcpy(&use_attributes, given_attributes, sizeof(use_attributes));
+    }
 
-    PthreadAttrImpl* used_attributes = arg_attributes ? *arg_attributes : &default_attributes;
+    bool stack_is_internal = false;
+    if (!use_attributes.m_stack_location) {
+        // We need to allocate a stack. However, we must not write it to the attributes
+        // struct the user holds, otherwise reusing the attr struct for pthread_create
+        // would fail, like in this example: https://linux.die.net/man/3/pthread_create
 
-    if (!used_attributes->m_stack_location) {
-        // adjust stack size, user might have called setstacksize, which has no restrictions on size/alignment
-        if (0 != (used_attributes->m_stack_size % required_stack_alignment))
-            used_attributes->m_stack_size += required_stack_alignment - (used_attributes->m_stack_size % required_stack_alignment);
+        // Adjust stack size, user might have called setstacksize, which has no
+        // restrictions on size/alignment.
+        if (0 != (use_attributes.m_stack_size % required_stack_alignment))
+            use_attributes.m_stack_size += required_stack_alignment - (use_attributes.m_stack_size % required_stack_alignment);
 
-        used_attributes->m_stack_location = mmap_with_name(nullptr, used_attributes->m_stack_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK, 0, 0, "Thread stack");
-        if (!used_attributes->m_stack_location)
+        use_attributes.m_stack_location = mmap_with_name(nullptr, use_attributes.m_stack_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK, 0, 0, "Thread stack");
+        if (!use_attributes.m_stack_location)
             return -1;
+        stack_is_internal = true;
     }
 
 #ifdef PTHREAD_DEBUG
     dbgprintf("pthread_create: Creating thread with attributes at %p, detach state %s, priority %d, guard page size %d, stack size %d, stack location %p\n",
-        used_attributes,
-        (PTHREAD_CREATE_JOINABLE == used_attributes->m_detach_state) ? "joinable" : "detached",
-        used_attributes->m_schedule_priority,
-        used_attributes->m_guard_page_size,
-        used_attributes->m_stack_size,
-        used_attributes->m_stack_location);
+        &use_attributes,
+        (PTHREAD_CREATE_JOINABLE == use_attributes.m_detach_state) ? "joinable" : "detached",
+        use_attributes.m_schedule_priority,
+        use_attributes.m_guard_page_size,
+        use_attributes.m_stack_size,
+        use_attributes.m_stack_location);
 #endif
 
-    int rc = create_thread(start_routine, argument_to_start_routine, used_attributes);
-    if (rc < 0)
+    PthreadTrampoline* trampoline = new PthreadTrampoline { start_routine, argument_to_start_routine };
+    // TODO: For a better pthread_trampoline, use something like this:
+    // if (stack_is_internal) {
+    //     trampoline->stack = use_attributes.m_stack_location
+    //     trampoline->stacksize = use_attributes.m_stack_size
+    // }
+
+    int rc = create_thread(pthread_trampoline, trampoline, &use_attributes);
+
+    if (rc < 0) {
+        if (stack_is_internal)
+            munmap(use_attributes.m_stack_location, use_attributes.m_stack_size);
+        delete trampoline;
         return rc;
+    }
     *thread = rc;
     return 0;
 }

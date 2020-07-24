@@ -198,12 +198,17 @@ ByteBuffer String::to_byte_buffer() const
 
 int String::to_int(bool& ok) const
 {
-    return StringUtils::convert_to_int(this->view(), ok);
+    return this->view().to_int(ok);
 }
 
 unsigned String::to_uint(bool& ok) const
 {
-    return StringUtils::convert_to_uint(this->view(), ok);
+    return this->view().to_uint(ok);
+}
+
+double String::to_double(bool& ok) const
+{
+    return this->view().to_double(ok);
 }
 
 String String::number(unsigned long long value)

@@ -192,12 +192,60 @@ StringView StringView::substring_view_starting_after_substring(const StringView&
 
 int StringView::to_int(bool& ok) const
 {
-    return StringUtils::convert_to_int(*this, ok);
+    StringView lead;
+    StringView trail;
+    long long number = StringUtils::convert_to_ll(*this, &lead, &trail);
+    if (!lead.is_null() || !trail.is_null()) {
+        ok = false;
+        return 0;
+    } else if (number > INT_MAX) {
+        errno = ERANGE;
+        ok = false;
+        return INT_MAX;
+    } else if (number < INT_MIN) {
+        errno = ERANGE;
+        ok = false;
+        return INT_MIN;
+    }
+
+    ok = true;
+    return static_cast<int>(number);
 }
 
 unsigned StringView::to_uint(bool& ok) const
 {
-    return StringUtils::convert_to_uint(*this, ok);
+    StringView lead;
+    StringView trail;
+    unsigned long long number = StringUtils::convert_to_ull(*this, &lead, &trail);
+    if (!lead.is_null() || !trail.is_null()) {
+        ok = false;
+        return 0;
+    } else if (number > UINT_MAX) {
+        errno = ERANGE;
+        ok = false;
+        return UINT_MAX;
+    }
+
+    ok = true;
+    return static_cast<unsigned>(number);
+}
+
+double StringView::to_double(bool& ok) const
+{
+    StringView lead;
+    StringView trail;
+    double number = StringUtils::convert_to_double(*this, &lead, &trail);
+    if (!lead.is_null() || !trail.is_null()) {
+        ok = false;
+        return 0.0;
+    } else if (!(number >= 0.0) && !(number <= 0.0)) {
+        // `number` is NaN. Usually we don't want this.
+        ok = false;
+        return 0.0;
+    }
+
+    ok = true;
+    return number;
 }
 
 unsigned StringView::hash() const

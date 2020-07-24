@@ -87,6 +87,7 @@ static Testcase TESTCASES[] = {
     { "BWN17", -1, "c3389e56ee5e7a57", "-6929495644600919" },
     { "BWN18", -1, "630a2b939cbca17f", "12345678901234567890e150" },
     { "BWN19", -1, "24c186a8a3f159df", "12345678901234567890e-150" },
+    { "BWN20", -1, "3ff0000000000000", " \t\n\v\f\r1" },
 
     // From the Serenity GitHub tracker:
     // https://github.com/SerenityOS/serenity/issues/1979

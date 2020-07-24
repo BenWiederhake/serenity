@@ -110,6 +110,7 @@ public:
 
     int to_int(bool& ok) const;
     unsigned to_uint(bool& ok) const;
+    double to_double(bool& ok) const;
 
     String to_lowercase() const;
     String to_uppercase() const;

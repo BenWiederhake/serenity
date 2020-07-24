@@ -39,9 +39,14 @@ enum class CaseSensitivity {
 namespace StringUtils {
 
 bool matches(const StringView& str, const StringView& mask, CaseSensitivity = CaseSensitivity::CaseInsensitive);
+bool equals_ignoring_case(const StringView&, const StringView&);
+
 int convert_to_int(const StringView&, bool& ok);
 unsigned convert_to_uint(const StringView&, bool& ok);
-bool equals_ignoring_case(const StringView&, const StringView&);
+
+long long convert_to_ll(const StringView&, StringView* lead, StringView* trail, int base = 10);
+unsigned long long convert_to_ull(const StringView&, StringView* lead, StringView* trail, int base = 10);
+double convert_to_double(const StringView&, StringView* lead, StringView* trail, int base = 10);
 
 }
 

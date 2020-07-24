@@ -41,7 +41,8 @@ void handle_sigint(int)
 {
 }
 
-double parse_amount(char* arg, bool& ok) {
+double parse_amount(char* arg, bool& ok)
+{
     // This can't go into AK/* because AK can't run anything from stdlib,
     // so strtod is not available yet.
     // TODO: Find a way to put this function into AK/

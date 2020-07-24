@@ -90,7 +90,7 @@ FlyString::FlyString(const char* string)
 
 int FlyString::to_int(bool& ok) const
 {
-    return StringUtils::convert_to_int(view(), ok);
+    return view().to_int(ok);
 }
 
 bool FlyString::equals_ignoring_case(const StringView& other) const

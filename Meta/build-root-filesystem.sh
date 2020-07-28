@@ -140,7 +140,8 @@ ln -s Shell mnt/bin/sh
 ln -s test mnt/bin/[
 echo "done"
 
-# Run local sync script, if it exists
-if [ -f sync-local.sh ]; then
-    sh sync-local.sh
-fi
+# BW2020-07-28: DEACTIVATED DUE TO ROOT
+## Run local sync script, if it exists
+#if [ -f sync-local.sh ]; then
+#    sh sync-local.sh
+#fi

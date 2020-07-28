@@ -65,7 +65,7 @@ static LibThread::Lock& malloc_lock()
 constexpr size_t number_of_chunked_blocks_to_keep_around_per_size_class = 4;
 constexpr size_t number_of_big_blocks_to_keep_around_per_size_class = 8;
 
-static bool s_log_malloc = false;
+bool s_log_malloc = false;
 static bool s_scrub_malloc = true;
 static bool s_scrub_free = true;
 static bool s_profiling = false;
@@ -110,6 +110,7 @@ struct ChunkedBlock
             else
                 entry->next = nullptr;
         }
+        ASSERT(m_freelist);
     }
 
     ChunkedBlock* m_prev { nullptr };
@@ -208,14 +209,16 @@ static void* malloc_impl(size_t size)
 {
     LOCKER(malloc_lock());
 
-    if (s_log_malloc)
-        dbgprintf("LibC: malloc(%zu)\n", size);
+    if (s_log_malloc && size == 1024)
+        dbgprintf("LibC: malloc(%zu) START\n", size);
 
     if (!size)
         return nullptr;
 
     size_t good_size;
     auto* allocator = allocator_for_size(size, good_size);
+    if (s_log_malloc && size == 1024)
+        dbgprintf("LibC: malloc(%zu) chose allocator %p\n", size, allocator);
 
     if (!allocator) {
         size_t real_size = round_up_to_power_of_two(sizeof(BigAllocationBlock) + size, block_size);
@@ -237,6 +240,8 @@ static void* malloc_impl(size_t size)
                     new (block) BigAllocationBlock(real_size);
 
                 ue_notify_malloc(&block->m_slot[0], size);
+                if (s_log_malloc && size == 1024)
+                    dbgprintf("LibC: malloc(%zu) about to return from !allocator && big branch\n", size);
                 return &block->m_slot[0];
             }
         }
@@ -244,20 +249,37 @@ static void* malloc_impl(size_t size)
         auto* block = (BigAllocationBlock*)os_alloc(real_size, "malloc: BigAllocationBlock");
         new (block) BigAllocationBlock(real_size);
         ue_notify_malloc(&block->m_slot[0], size);
+        if (s_log_malloc && size == 1024)
+            dbgprintf("LibC: malloc(%zu) about to return from !allocator (and probably !big)\n", size);
         return &block->m_slot[0];
     }
 
     ChunkedBlock* block = nullptr;
+
+    if (s_log_malloc && size == 1024)
+        dbgprintf("LibC: malloc(%zu) searching for block in %p\n", size, allocator);
 
     for (block = allocator->usable_blocks.head(); block; block = block->next()) {
         if (block->free_chunks())
             break;
     }
 
+    if (s_log_malloc && size == 1024)
+        dbgprintf("LibC: malloc(%zu) found %p\n", size, block);
+
     if (!block && allocator->empty_block_count) {
+        if (s_log_malloc && size == 1024)
+            dbgprintf("LibC: malloc(%zu) !block && empty_block_count\n", size);
+
         block = allocator->empty_blocks[--allocator->empty_block_count];
+        if (s_log_malloc && size == 1024)
+            dbgprintf("LibC: malloc(%zu) took block %p\n", size, block);
         int rc = madvise(block, block_size, MADV_SET_NONVOLATILE);
         bool this_block_was_purged = rc == 1;
+        if (s_log_malloc && size == 1024)
+            dbgprintf("LibC: malloc(%zu) was purged = %d\n", size, this_block_was_purged);
+        if (s_log_malloc && size == 1024)
+            dbgprintf("LibC: malloc(%zu) rc = %d\n", size, rc);
         if (rc < 0) {
             perror("madvise");
             ASSERT_NOT_REACHED();
@@ -267,38 +289,63 @@ static void* malloc_impl(size_t size)
             perror("mprotect");
             ASSERT_NOT_REACHED();
         }
+        if (s_log_malloc && size == 1024)
+            dbgprintf("LibC: malloc(%zu) about to call new on %p\n", size, block);
         if (this_block_was_purged)
             new (block) ChunkedBlock(good_size);
+        if (s_log_malloc && size == 1024)
+            dbgprintf("LibC: malloc(%zu) done initializing block at %p\n", size, block);
+        if (s_log_malloc && size == 1024)
+            dbgprintf("LibC: malloc(%zu) m_freelist is %p\n", size, block->m_freelist);
+        ASSERT(block->m_freelist);
         allocator->usable_blocks.append(block);
     }
 
     if (!block) {
+        if (s_log_malloc && size == 1024)
+            dbgprintf("LibC: malloc(%zu) Requesting new block\n", size);
         char buffer[64];
         snprintf(buffer, sizeof(buffer), "malloc: ChunkedBlock(%zu)", good_size);
         block = (ChunkedBlock*)os_alloc(block_size, buffer);
+        if (s_log_malloc && size == 1024)
+            dbgprintf("LibC: malloc(%zu) got %p\n", size, block);
         new (block) ChunkedBlock(good_size);
         allocator->usable_blocks.append(block);
         ++allocator->block_count;
     }
 
+    if (s_log_malloc && size == 1024)
+        dbgprintf("LibC: malloc(%zu) block should now be selected: %p\n", size, block);
     --block->m_free_chunks;
     void* ptr = block->m_freelist;
+    if (s_log_malloc && size == 1024)
+        dbgprintf("LibC: malloc(%zu) freelist was: %p\n", size, ptr);
     block->m_freelist = block->m_freelist->next;
+    if (s_log_malloc && size == 1024)
+        dbgprintf("LibC: malloc(%zu) new freelist is: %p\n", size, block->m_freelist);
     if (block->is_full()) {
 #ifdef MALLOC_DEBUG
         dbgprintf("Block %p is now full in size class %zu\n", block, good_size);
 #endif
+        if (s_log_malloc && size == 1024)
+            dbgprintf("LibC: malloc(%zu) marking as full\n", size);
         allocator->usable_blocks.remove(block);
         allocator->full_blocks.append(block);
+        if (s_log_malloc && size == 1024)
+            dbgprintf("LibC: malloc(%zu) done marking as full\n", size);
     }
 #ifdef MALLOC_DEBUG
     dbgprintf("LibC: allocated %p (chunk in block %p, size %zu)\n", ptr, block, block->bytes_per_chunk());
 #endif
 
+    if (s_log_malloc && size == 1024)
+        dbgprintf("LibC: malloc(%zu) scrubbing %p\n", size, block);
     if (s_scrub_malloc)
         memset(ptr, MALLOC_SCRUB_BYTE, block->m_size);
 
     ue_notify_malloc(ptr, size);
+    if (s_log_malloc && size == 1024)
+        dbgprintf("LibC: malloc(%zu) return from end\n", size);
     return ptr;
 }
 

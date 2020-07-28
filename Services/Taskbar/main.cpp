@@ -37,6 +37,8 @@ int main(int argc, char** argv)
         return 1;
     }
 
+    s_log_malloc = true;
+
     auto app = GUI::Application::construct(argc, argv);
 
     signal(SIGCHLD, [](int signo) {

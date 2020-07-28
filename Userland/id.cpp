@@ -38,8 +38,30 @@ static bool flag_print_gid = false;
 static bool flag_print_name = false;
 static bool flag_print_gid_all = false;
 
+class FancyInt {
+public:
+    FancyInt(int i)
+        : m_i(i)
+    {
+        dbg() << "Truly, I am a fancy int!";
+    }
+
+    int get() const { return m_i; }
+
+private:
+    int m_i;
+};
+
 int main(int argc, char** argv)
 {
+    dbg() << "Start";
+    FancyInt fi(42);
+    dbg() << "Done fi. It's " << fi.get();
+    *((int*)(&fi)) = 4;
+    dbg() << "Done manipulating. It's " << fi.get();
+    new (&fi) FancyInt(1337);
+    dbg() << "Done fi2. It's " << fi.get();
+
     if (unveil("/etc/passwd", "r") < 0) {
         perror("unveil");
         return 1;

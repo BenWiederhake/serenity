@@ -8,6 +8,7 @@ die() {
 }
 
 if [ "$(id -u)" != 0 ]; then
+    echo "re-exec'ing as $0 with $@"
     exec sudo -E -- "$0" "$@" || die "this script needs to run as root"
 else
     : "${SUDO_UID:=0}" "${SUDO_GID:=0}"

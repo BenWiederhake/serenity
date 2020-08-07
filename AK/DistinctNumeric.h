@@ -88,8 +88,19 @@ public:
 
     const T& value() const { return m_value; }
 
+    // Always implemented:
     bool operator==(const Self&) const;
     bool operator!=(const Self&) const;
+
+    // Only implemented when `seq==true`:
+    bool operator++();
+    bool operator++(int);
+    bool operator--();
+    bool operator--(int);
+
+    // Only implemented when `truthy==true`:
+    operator bool() const;
+    // The default implementations for `operator!()`, `operator&&(bool)`, `operator||(bool)` const are fine.
 
 private:
     T m_value;
@@ -105,6 +116,12 @@ template<typename T, bool seq, bool cmp, bool truthy, bool flags, bool shift, bo
 inline bool DistinctNumeric<T, seq, cmp, truthy, flags, shift, arith, fn_len, line>::operator!=(const DistinctNumeric<T, seq, cmp, truthy, flags, shift, arith, fn_len, line>& b) const
 {
     return this->m_value != b.m_value;
+}
+
+template<typename T, bool seq, bool cmp, bool truthy, bool flags, bool shift, bool arith, size_t fn_len, size_t line>
+inline DistinctNumeric<T, seq, cmp, truthy, flags, shift, arith, fn_len, line>::operator bool() const
+{
+    return this->m_value;
 }
 
 // NOTE: Please name all macros that end up calling this macro also something

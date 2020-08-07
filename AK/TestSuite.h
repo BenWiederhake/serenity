@@ -274,13 +274,13 @@ using AK::TestSuite;
         TestSuite::release();                                                      \
     }
 
-#define assertEqual(one, two)                                                                                                                                              \
-    do {                                                                                                                                                                   \
-        auto ___aev1 = one;                                                                                                                                                \
-        auto ___aev2 = two;                                                                                                                                                \
-        if (___aev1 != ___aev2) {                                                                                                                                          \
+#define assertEqual(one, two)                                                                                                        \
+    do {                                                                                                                             \
+        auto ___aev1 = one;                                                                                                          \
+        auto ___aev2 = two;                                                                                                          \
+        if (___aev1 != ___aev2) {                                                                                                    \
             dbg() << "\033[31;1mFAIL\033[0m: " __FILE__ ":" << __LINE__ << ": assertEqual(" ___str(one) ", " ___str(two) ") failed"; \
-        }                                                                                                                                                                  \
+        }                                                                                                                            \
     } while (0)
 
 #define EXPECT_EQ(one, two) assertEqual(one, two)

@@ -78,6 +78,8 @@ constexpr int literal_length(const char (&)[N])
  */
 template<typename T, bool seq, bool cmp, bool truthy, bool flags, bool shift, bool arith, size_t fn_len, size_t line>
 class DistinctNumeric {
+    typedef DistinctNumeric<T, seq, cmp, truthy, flags, shift, arith, fn_len, line> Self;
+
 public:
     DistinctNumeric(T value)
         : m_value { value }
@@ -86,9 +88,24 @@ public:
 
     const T& value() const { return m_value; }
 
+    bool operator==(const Self&) const;
+    bool operator!=(const Self&) const;
+
 private:
     T m_value;
 };
+
+template<typename T, bool seq, bool cmp, bool truthy, bool flags, bool shift, bool arith, size_t fn_len, size_t line>
+inline bool DistinctNumeric<T, seq, cmp, truthy, flags, shift, arith, fn_len, line>::operator==(const DistinctNumeric<T, seq, cmp, truthy, flags, shift, arith, fn_len, line>& b) const
+{
+    return this->m_value == b.m_value;
+}
+
+template<typename T, bool seq, bool cmp, bool truthy, bool flags, bool shift, bool arith, size_t fn_len, size_t line>
+inline bool DistinctNumeric<T, seq, cmp, truthy, flags, shift, arith, fn_len, line>::operator!=(const DistinctNumeric<T, seq, cmp, truthy, flags, shift, arith, fn_len, line>& b) const
+{
+    return this->m_value != b.m_value;
+}
 
 // NOTE: Please name all macros that end up calling this macro also something
 // like `TYPEDEF_DISTINCT_`. This way, writing a linter that checks for

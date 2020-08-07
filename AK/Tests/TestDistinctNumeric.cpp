@@ -54,14 +54,27 @@ TEST_CASE(check_size)
     ForType<double>::check_size();
 }
 
+TYPEDEF_DISTINCT_NUMERIC_GENERAL(int, true, true, true, true, true, true, GeneralNumeric);
+TYPEDEF_DISTINCT_NUMERIC_GENERAL(int, false, false, false, false, false, false, BareNumeric);
+
 TEST_CASE(address_identity)
 {
-    TYPEDEF_DISTINCT_NUMERIC_GENERAL(int, true, true, true, true, true, true, GeneralNumeric);
-
     GeneralNumeric a = 4;
     GeneralNumeric b = 5;
-    EXPECT(&a == &a);
-    EXPECT(&a != &b);
+    EXPECT_EQ(&a == &a, true);
+    EXPECT_EQ(&a == &b, false);
+    EXPECT_EQ(&a != &a, false);
+    EXPECT_EQ(&a != &b, true);
+}
+
+TEST_CASE(operator_identity)
+{
+    BareNumeric a = 4;
+    BareNumeric b = 5;
+    EXPECT_EQ(a == a, true);
+    EXPECT_EQ(a == b, false);
+    EXPECT_EQ(a != a, false);
+    EXPECT_EQ(a != b, true);
 }
 
 TEST_MAIN(DistinctNumeric)

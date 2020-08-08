@@ -150,12 +150,25 @@ public:
     // 'operator<=>' cannot be implemented. See class comment.
 
     // Only implemented when `truthy` is true:
-    operator bool() const
+    bool operator!() const
     {
-        static_assert(truthy, "'!a', 'a&&b', 'a||b' and similar operators are only available for DistinctNumeric types with 'truthy'.");
-        return this->m_value;
+        static_assert(truthy, "'!a' is only available for DistinctNumeric types with 'truthy'.");
+        return !this->m_value;
     }
-    // The default implementations for `operator!()`, `operator&&(bool)`, `operator||(bool)` const are fine.
+    bool operator&&(const Self& other) const
+    {
+        static_assert(truthy, "'a&&b' is only available for DistinctNumeric types with 'truthy'.");
+        return this->m_value && other.m_value;
+    }
+    bool operator||(const Self& other) const
+    {
+        static_assert(truthy, "'a||b' is only available for DistinctNumeric types with 'truthy'.");
+        return this->m_value || other.m_value;
+    }
+    // Intentionally don't define `operator bool() const` here. C++ is a bit
+    // overzealos, and whenever there would be a type error, C++ instead tries
+    // to convert to a common int-ish type first. `bool` is int-ish, so
+    // `operator bool() const` would defy the entire point of this class.
 
     // Only implemented when `flags` is true:
     Self operator~() const

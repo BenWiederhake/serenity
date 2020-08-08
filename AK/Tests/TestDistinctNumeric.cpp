@@ -121,11 +121,8 @@ TEST_CASE(operator_truthy)
     TruthyNumeric b = 42;
     TruthyNumeric c = 1337;
     EXPECT_EQ(!a, true);
-    EXPECT_EQ((bool)a, false);
     EXPECT_EQ(!b, false);
-    EXPECT_EQ((bool)b, true);
     EXPECT_EQ(!c, false);
-    EXPECT_EQ((bool)c, true);
     EXPECT_EQ(a && b, false);
     EXPECT_EQ(a && c, false);
     EXPECT_EQ(b && c, true);
@@ -236,7 +233,6 @@ TEST_CASE(composability)
     EXPECT_EQ(a >= b, false);
     // truthy
     EXPECT_EQ(!a, true);
-    EXPECT_EQ((bool)b, true);
     EXPECT_EQ(a && b, false);
     EXPECT_EQ(a || b, true);
     // flags

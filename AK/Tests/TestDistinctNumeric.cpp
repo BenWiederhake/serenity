@@ -251,4 +251,63 @@ TEST_CASE(composability)
     EXPECT_EQ(b * GeneralNumeric(42), GeneralNumeric(42));
 }
 
+/*
+ * FIXME: These `negative_*` tests should cause precisely one compilation error
+ * each, and always for the specified reason. Currently we do not have a harness
+ * for that, so in order to run the test you need to set the #define to 1, compile
+ * it, and check the error messages manually.
+ */
+//#define COMPILE_NEGATIVE_TESTS
+#ifdef COMPILE_NEGATIVE_TESTS
+TEST_CASE(negative_seq)
+{
+    BareNumeric a = 12;
+    a++;
+    // error: static assertion failed: 'a++' is only available for DistinctNumeric types with 'seq'.
+}
+
+TEST_CASE(negative_cmp)
+{
+    BareNumeric a = 12;
+    (void)(a < a);
+    // error: static assertion failed: 'a<b' is only available for DistinctNumeric types with 'cmp'.
+}
+
+TEST_CASE(negative_truthy)
+{
+    BareNumeric a = 12;
+    (void)!a;
+    // error: static assertion failed: '!a', 'a&&b', 'a||b' and similar operators are only available for DistinctNumeric types with 'truthy'.
+}
+
+TEST_CASE(negative_flags)
+{
+    BareNumeric a = 12;
+    (void)(a & a);
+    // error: static assertion failed: 'a&b' is only available for DistinctNumeric types with 'flags'.
+}
+
+TEST_CASE(negative_shift)
+{
+    BareNumeric a = 12;
+    (void)(a << a);
+    // error: static assertion failed: 'a<<b' is only available for DistinctNumeric types with 'shift'.
+}
+
+TEST_CASE(negative_arith)
+{
+    BareNumeric a = 12;
+    (void)(a + a);
+    // error: static assertion failed: 'a+b' is only available for DistinctNumeric types with 'arith'.
+}
+
+TEST_CASE(negative_incompatible)
+{
+    GeneralNumeric a = 12;
+    ArithNumeric b = 345;
+    (void)(a + b);
+    // error: ???
+}
+#endif /* COMPILE_NEGATIVE_TESTS */
+
 TEST_MAIN(DistinctNumeric)

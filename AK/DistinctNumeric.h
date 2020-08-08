@@ -158,31 +158,61 @@ public:
     // The default implementations for `operator!()`, `operator&&(bool)`, `operator||(bool)` const are fine.
 
     // Only implemented when `flags` is true:
-    Self operator~() const;
-    Self operator&(const Self&) const;
-    Self operator|(const Self&) const;
-    Self operator^(const Self&) const;
-    Self& operator&=(const Self&);
-    Self& operator|=(const Self&);
-    Self& operator^=(const Self&);
-    // FIXME: impl, test
+    Self operator~() const
+    {
+        static_assert(flags, "'~a' is only available for DistinctNumeric types with 'flags'.");
+        return ~this->m_value;
+    }
+    Self operator&(const Self& other) const
+    {
+        static_assert(flags, "'a&b' is only available for DistinctNumeric types with 'flags'.");
+        return this->m_value & other.m_value;
+    }
+    Self operator|(const Self& other) const
+    {
+        static_assert(flags, "'a|b' is only available for DistinctNumeric types with 'flags'.");
+        return this->m_value | other.m_value;
+    }
+    Self operator^(const Self& other) const
+    {
+        static_assert(flags, "'a^b' is only available for DistinctNumeric types with 'flags'.");
+        return this->m_value ^ other.m_value;
+    }
+    Self& operator&=(const Self& other)
+    {
+        static_assert(flags, "'a&=b' is only available for DistinctNumeric types with 'flags'.");
+        this->m_value &= other.m_value;
+        return *this;
+    }
+    Self& operator|=(const Self& other)
+    {
+        static_assert(flags, "'a|=b' is only available for DistinctNumeric types with 'flags'.");
+        this->m_value |= other.m_value;
+        return *this;
+    }
+    Self& operator^=(const Self& other)
+    {
+        static_assert(flags, "'a^=b' is only available for DistinctNumeric types with 'flags'.");
+        this->m_value ^= other.m_value;
+        return *this;
+    }
 
     // Only implemented when `shift` is true:
     // TODO: Should this take `int` instead?
-    Self operator<<(const Self&) const;
-    Self operator>>(const Self&) const;
-    Self& operator<<=(const Self&);
-    Self& operator>>=(const Self&);
+    Self operator<<(const Self& other) const;
+    Self operator>>(const Self& other) const;
+    Self& operator<<=(const Self& other);
+    Self& operator>>=(const Self& other);
     // FIXME: impl, test
 
     // Only implemented when `arith` is true:
-    Self operator+(const Self&) const;
-    Self operator-(const Self&) const;
+    Self operator+(const Self& other) const;
+    Self operator-(const Self& other) const;
     Self operator+() const;
     Self operator-() const;
-    Self operator*(const Self&) const;
-    Self operator/(const Self&) const;
-    Self operator%(const Self&) const;
+    Self operator*(const Self& other) const;
+    Self operator/(const Self& other) const;
+    Self operator%(const Self& other) const;
     // The default implementations for compound assignment are fine.
     // FIXME: impl, test
 

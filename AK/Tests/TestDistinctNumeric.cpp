@@ -56,8 +56,11 @@ TEST_CASE(check_size)
 
 TYPEDEF_DISTINCT_NUMERIC_GENERAL(int, false, false, false, false, false, false, BareNumeric);
 TYPEDEF_DISTINCT_NUMERIC_GENERAL(int, true, false, false, false, false, false, SeqNumeric);
-TYPEDEF_DISTINCT_NUMERIC_GENERAL(int, false, true, true, false, false, false, CmpNumeric);
+TYPEDEF_DISTINCT_NUMERIC_GENERAL(int, false, true, false, false, false, false, CmpNumeric);
 TYPEDEF_DISTINCT_NUMERIC_GENERAL(int, false, false, true, false, false, false, TruthyNumeric);
+TYPEDEF_DISTINCT_NUMERIC_GENERAL(int, false, false, false, true, false, false, FlagsNumeric);
+TYPEDEF_DISTINCT_NUMERIC_GENERAL(int, false, false, false, false, true, false, ShiftNumeric);
+TYPEDEF_DISTINCT_NUMERIC_GENERAL(int, false, false, false, false, false, true, ArithNumeric);
 TYPEDEF_DISTINCT_NUMERIC_GENERAL(int, true, true, true, true, true, true, GeneralNumeric);
 
 TEST_CASE(address_identity)
@@ -130,6 +133,48 @@ TEST_CASE(operator_truthy)
     EXPECT_EQ(a || b, true);
     EXPECT_EQ(a || c, true);
     EXPECT_EQ(b || c, true);
+}
+
+TEST_CASE(operator_flags)
+{
+    FlagsNumeric a = 0;
+    FlagsNumeric b = 0xA60;
+    FlagsNumeric c = 0x03B;
+    EXPECT_EQ(~a, FlagsNumeric(~0x0));
+    EXPECT_EQ(~b, FlagsNumeric(~0xA60));
+    EXPECT_EQ(~c, FlagsNumeric(~0x03B));
+
+    EXPECT_EQ(a & b, b & a);
+    EXPECT_EQ(a & c, c & a);
+    EXPECT_EQ(b & c, c & b);
+    EXPECT_EQ(a | b, b | a);
+    EXPECT_EQ(a | c, c | a);
+    EXPECT_EQ(b | c, c | b);
+    EXPECT_EQ(a ^ b, b ^ a);
+    EXPECT_EQ(a ^ c, c ^ a);
+    EXPECT_EQ(b ^ c, c ^ b);
+
+    EXPECT_EQ(a & b, FlagsNumeric(0x000));
+    EXPECT_EQ(a & c, FlagsNumeric(0x000));
+    EXPECT_EQ(b & c, FlagsNumeric(0x020));
+    EXPECT_EQ(a | b, FlagsNumeric(0xA60));
+    EXPECT_EQ(a | c, FlagsNumeric(0x03B));
+    EXPECT_EQ(b | c, FlagsNumeric(0xA7B));
+    EXPECT_EQ(a ^ b, FlagsNumeric(0xA60));
+    EXPECT_EQ(a ^ c, FlagsNumeric(0x03B));
+    EXPECT_EQ(b ^ c, FlagsNumeric(0xA5B));
+
+    EXPECT_EQ(a &= b, FlagsNumeric(0x000));
+    EXPECT_EQ(a, FlagsNumeric(0x000));
+    EXPECT_EQ(a |= b, FlagsNumeric(0xA60));
+    EXPECT_EQ(a, FlagsNumeric(0xA60));
+    EXPECT_EQ(a &= c, FlagsNumeric(0x020));
+    EXPECT_EQ(a, FlagsNumeric(0x020));
+    EXPECT_EQ(a ^= b, FlagsNumeric(0xA40));
+    EXPECT_EQ(a, FlagsNumeric(0xA40));
+
+    EXPECT_EQ(b, FlagsNumeric(0xA60));
+    EXPECT_EQ(c, FlagsNumeric(0x03B));
 }
 
 TEST_MAIN(DistinctNumeric)

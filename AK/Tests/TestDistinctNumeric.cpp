@@ -55,7 +55,7 @@ TEST_CASE(check_size)
 }
 
 TYPEDEF_DISTINCT_NUMERIC_GENERAL(int, false, false, false, false, false, false, BareNumeric);
-TYPEDEF_DISTINCT_NUMERIC_GENERAL(int, true, false, false, false, false, false, TruthyNumeric);
+TYPEDEF_DISTINCT_NUMERIC_GENERAL(int, false, false, true, false, false, false, TruthyNumeric);
 TYPEDEF_DISTINCT_NUMERIC_GENERAL(int, true, true, true, true, true, true, GeneralNumeric);
 
 TEST_CASE(address_identity)

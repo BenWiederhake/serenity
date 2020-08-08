@@ -88,41 +88,62 @@ public:
 
     const T& value() const { return m_value; }
 
-    // Always implemented:
-    bool operator==(const Self&) const;
-    bool operator!=(const Self&) const;
+    // Always implemented: identity.
+    bool operator==(const Self& other) const
+    {
+        return this->m_value == other.m_value;
+    }
+    bool operator!=(const Self& other) const
+    {
+        return this->m_value != other.m_value;
+    }
 
-    // Only implemented when `seq==true`:
-    bool operator++();
-    bool operator++(int);
-    bool operator--();
-    bool operator--(int);
+    // Only implemented when `seq` is true:
+    inline Self& operator++()
+    {
+        static_assert(seq, "'++a' is only available for DistinctNumeric types with 'seq'.");
+        this->m_value += 1;
+        return *this;
+    }
+    inline Self operator++(int)
+    {
+        static_assert(seq, "'a++' is only available for DistinctNumeric types with 'seq'.");
+        Self ret = this->m_value;
+        this->m_value += 1;
+        return ret;
+    }
+    inline Self& operator--()
+    {
+        static_assert(seq, "'--a' is only available for DistinctNumeric types with 'seq'.");
+        this->m_value -= 1;
+        return *this;
+    }
+    inline Self operator--(int)
+    {
+        static_assert(seq, "'a--' is only available for DistinctNumeric types with 'seq'.");
+        Self ret = this->m_value;
+        this->m_value -= 1;
+        return ret;
+    }
+    // FIXME: Not tested
 
     // Only implemented when `truthy==true`:
-    operator bool() const;
+    inline operator bool() const
+    {
+        static_assert(truthy, "'!a', 'a&&b', 'a||b' and similar operators are only available for DistinctNumeric types with 'truthy'.");
+        return this->m_value;
+    }
     // The default implementations for `operator!()`, `operator&&(bool)`, `operator||(bool)` const are fine.
 
+    // Only implemented when `flags==true`:
+    Self operator~() const;
+    Self operator&(const Self&) const;
+    Self operator|(const Self&) const;
+    Self operator^(const Self&) const;
+    // The default implementations for `operator&=()`, `operator|=(bool)`, `operator^=(bool)` are probably fine.
 private:
     T m_value;
 };
-
-template<typename T, bool seq, bool cmp, bool truthy, bool flags, bool shift, bool arith, size_t fn_len, size_t line>
-inline bool DistinctNumeric<T, seq, cmp, truthy, flags, shift, arith, fn_len, line>::operator==(const DistinctNumeric<T, seq, cmp, truthy, flags, shift, arith, fn_len, line>& b) const
-{
-    return this->m_value == b.m_value;
-}
-
-template<typename T, bool seq, bool cmp, bool truthy, bool flags, bool shift, bool arith, size_t fn_len, size_t line>
-inline bool DistinctNumeric<T, seq, cmp, truthy, flags, shift, arith, fn_len, line>::operator!=(const DistinctNumeric<T, seq, cmp, truthy, flags, shift, arith, fn_len, line>& b) const
-{
-    return this->m_value != b.m_value;
-}
-
-template<typename T, bool seq, bool cmp, bool truthy, bool flags, bool shift, bool arith, size_t fn_len, size_t line>
-inline DistinctNumeric<T, seq, cmp, truthy, flags, shift, arith, fn_len, line>::operator bool() const
-{
-    return this->m_value;
-}
 
 // NOTE: Please name all macros that end up calling this macro also something
 // like `TYPEDEF_DISTINCT_`. This way, writing a linter that checks for

@@ -193,6 +193,33 @@ TEST_CASE(operator_shift)
     EXPECT_EQ(a, ShiftNumeric(0x008));
 }
 
+TEST_CASE(operator_arith)
+{
+    ArithNumeric a = 12;
+    ArithNumeric b = 345;
+    EXPECT_EQ(a + b, ArithNumeric(357));
+    EXPECT_EQ(b + a, ArithNumeric(357));
+    EXPECT_EQ(a - b, ArithNumeric(-333));
+    EXPECT_EQ(b - a, ArithNumeric(333));
+    EXPECT_EQ(+a, ArithNumeric(12));
+    EXPECT_EQ(-a, ArithNumeric(-12));
+    EXPECT_EQ(a * b, ArithNumeric(4140));
+    EXPECT_EQ(b * a, ArithNumeric(4140));
+    EXPECT_EQ(a / b, ArithNumeric(0));
+    EXPECT_EQ(b / a, ArithNumeric(28));
+    EXPECT_EQ(a % b, ArithNumeric(12));
+    EXPECT_EQ(b % a, ArithNumeric(9));
+
+    EXPECT_EQ(a += a, ArithNumeric(24));
+    EXPECT_EQ(a, ArithNumeric(24));
+    EXPECT_EQ(a *= a, ArithNumeric(576));
+    EXPECT_EQ(a, ArithNumeric(576));
+    EXPECT_EQ(a /= a, ArithNumeric(1));
+    EXPECT_EQ(a, ArithNumeric(1));
+    EXPECT_EQ(a %= a, ArithNumeric(0));
+    EXPECT_EQ(a, ArithNumeric(0));
+}
+
 TEST_CASE(composability)
 {
     GeneralNumeric a = 0;
@@ -219,7 +246,9 @@ TEST_CASE(composability)
     EXPECT_EQ(b << GeneralNumeric(4), GeneralNumeric(0x10));
     EXPECT_EQ(b >> b, GeneralNumeric(0));
     // arith
-    // FIXME
+    EXPECT_EQ(-b, GeneralNumeric(-1));
+    EXPECT_EQ(a + b, b);
+    EXPECT_EQ(b * GeneralNumeric(42), GeneralNumeric(42));
 }
 
 TEST_MAIN(DistinctNumeric)

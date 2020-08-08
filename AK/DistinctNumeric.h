@@ -223,15 +223,71 @@ public:
     }
 
     // Only implemented when `arith` is true:
-    Self operator+(const Self& other) const;
-    Self operator-(const Self& other) const;
-    Self operator+() const;
-    Self operator-() const;
-    Self operator*(const Self& other) const;
-    Self operator/(const Self& other) const;
-    Self operator%(const Self& other) const;
-    // The default implementations for compound assignment are fine.
-    // FIXME: impl, test
+    Self operator+(const Self& other) const
+    {
+        static_assert(arith, "'a+b' is only available for DistinctNumeric types with 'arith'.");
+        return this->m_value + other.m_value;
+    }
+    Self operator-(const Self& other) const
+    {
+        static_assert(arith, "'a-b' is only available for DistinctNumeric types with 'arith'.");
+        return this->m_value - other.m_value;
+    }
+    Self operator+() const
+    {
+        static_assert(arith, "'+a' is only available for DistinctNumeric types with 'arith'.");
+        return +this->m_value;
+    }
+    Self operator-() const
+    {
+        static_assert(arith, "'-a' is only available for DistinctNumeric types with 'arith'.");
+        return -this->m_value;
+    }
+    Self operator*(const Self& other) const
+    {
+        static_assert(arith, "'a*b' is only available for DistinctNumeric types with 'arith'.");
+        return this->m_value * other.m_value;
+    }
+    Self operator/(const Self& other) const
+    {
+        static_assert(arith, "'a/b' is only available for DistinctNumeric types with 'arith'.");
+        return this->m_value / other.m_value;
+    }
+    Self operator%(const Self& other) const
+    {
+        static_assert(arith, "'a%b' is only available for DistinctNumeric types with 'arith'.");
+        return this->m_value % other.m_value;
+    }
+    Self& operator+=(const Self& other)
+    {
+        static_assert(arith, "'a+=b' is only available for DistinctNumeric types with 'arith'.");
+        this->m_value += other.m_value;
+        return *this;
+    }
+    Self& operator-=(const Self& other)
+    {
+        static_assert(arith, "'a+=b' is only available for DistinctNumeric types with 'arith'.");
+        this->m_value += other.m_value;
+        return *this;
+    }
+    Self& operator*=(const Self& other)
+    {
+        static_assert(arith, "'a*=b' is only available for DistinctNumeric types with 'arith'.");
+        this->m_value *= other.m_value;
+        return *this;
+    }
+    Self& operator/=(const Self& other)
+    {
+        static_assert(arith, "'a/=b' is only available for DistinctNumeric types with 'arith'.");
+        this->m_value /= other.m_value;
+        return *this;
+    }
+    Self& operator%=(const Self& other)
+    {
+        static_assert(arith, "'a%=b' is only available for DistinctNumeric types with 'arith'.");
+        this->m_value %= other.m_value;
+        return *this;
+    }
 
 private:
     T m_value;

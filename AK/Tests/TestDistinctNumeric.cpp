@@ -95,6 +95,21 @@ TEST_CASE(operator_seq)
 
 TEST_CASE(operator_cmp)
 {
+    CmpNumeric a = 4;
+    CmpNumeric b = 5;
+    CmpNumeric c = 5;
+    EXPECT_EQ(a > b, false);
+    EXPECT_EQ(a < b, true);
+    EXPECT_EQ(a >= b, false);
+    EXPECT_EQ(a <= b, true);
+    EXPECT_EQ(b > a, true);
+    EXPECT_EQ(b < a, false);
+    EXPECT_EQ(b >= a, true);
+    EXPECT_EQ(b <= a, false);
+    EXPECT_EQ(b > c, false);
+    EXPECT_EQ(b < c, false);
+    EXPECT_EQ(b >= c, true);
+    EXPECT_EQ(b <= c, true);
 }
 
 TEST_CASE(operator_truthy)

@@ -99,26 +99,26 @@ public:
     }
 
     // Only implemented when `seq` is true:
-    inline Self& operator++()
+    Self& operator++()
     {
         static_assert(seq, "'++a' is only available for DistinctNumeric types with 'seq'.");
         this->m_value += 1;
         return *this;
     }
-    inline Self operator++(int)
+    Self operator++(int)
     {
         static_assert(seq, "'a++' is only available for DistinctNumeric types with 'seq'.");
         Self ret = this->m_value;
         this->m_value += 1;
         return ret;
     }
-    inline Self& operator--()
+    Self& operator--()
     {
         static_assert(seq, "'--a' is only available for DistinctNumeric types with 'seq'.");
         this->m_value -= 1;
         return *this;
     }
-    inline Self operator--(int)
+    Self operator--(int)
     {
         static_assert(seq, "'a--' is only available for DistinctNumeric types with 'seq'.");
         Self ret = this->m_value;
@@ -126,10 +126,31 @@ public:
         return ret;
     }
 
-    // FIXME: cmp
+    bool operator>(const Self& other) const
+    {
+        static_assert(cmp, "'a>b' is only available for DistinctNumeric types with 'cmp'.");
+        return this->m_value > other.m_value;
+    }
+    bool operator<(const Self& other) const
+    {
+        static_assert(cmp, "'a<b' is only available for DistinctNumeric types with 'cmp'.");
+        return this->m_value < other.m_value;
+    }
+    bool operator>=(const Self& other) const
+    {
+        static_assert(cmp, "'a>=b' is only available for DistinctNumeric types with 'cmp'.");
+        return this->m_value >= other.m_value;
+    }
+    bool operator<=(const Self& other) const
+    {
+        static_assert(cmp, "'a<=b' is only available for DistinctNumeric types with 'cmp'.");
+        return this->m_value <= other.m_value;
+    }
+    // 'operator<=>' cannot be implemented. See class comment.
+    // FIXME: cmp tests
 
     // Only implemented when `truthy==true`:
-    inline operator bool() const
+    operator bool() const
     {
         static_assert(truthy, "'!a', 'a&&b', 'a||b' and similar operators are only available for DistinctNumeric types with 'truthy'.");
         return this->m_value;

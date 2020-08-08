@@ -125,7 +125,8 @@ public:
         this->m_value -= 1;
         return ret;
     }
-    // FIXME: Not tested
+
+    // FIXME: cmp
 
     // Only implemented when `truthy==true`:
     inline operator bool() const

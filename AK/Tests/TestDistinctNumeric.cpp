@@ -55,6 +55,8 @@ TEST_CASE(check_size)
 }
 
 TYPEDEF_DISTINCT_NUMERIC_GENERAL(int, false, false, false, false, false, false, BareNumeric);
+TYPEDEF_DISTINCT_NUMERIC_GENERAL(int, true, false, false, false, false, false, SeqNumeric);
+TYPEDEF_DISTINCT_NUMERIC_GENERAL(int, false, true, true, false, false, false, CmpNumeric);
 TYPEDEF_DISTINCT_NUMERIC_GENERAL(int, false, false, true, false, false, false, TruthyNumeric);
 TYPEDEF_DISTINCT_NUMERIC_GENERAL(int, true, true, true, true, true, true, GeneralNumeric);
 
@@ -76,6 +78,23 @@ TEST_CASE(operator_identity)
     EXPECT_EQ(a == b, false);
     EXPECT_EQ(a != a, false);
     EXPECT_EQ(a != b, true);
+}
+
+TEST_CASE(operator_seq)
+{
+    SeqNumeric a = 4;
+    SeqNumeric b = 5;
+    SeqNumeric c = 6;
+    EXPECT_EQ(++a, b);
+    EXPECT_EQ(a++, b);
+    EXPECT_EQ(a, c);
+    EXPECT_EQ(--a, b);
+    EXPECT_EQ(a--, b);
+    EXPECT(a != b);
+}
+
+TEST_CASE(operator_cmp)
+{
 }
 
 TEST_CASE(operator_truthy)

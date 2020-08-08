@@ -126,6 +126,7 @@ public:
         return ret;
     }
 
+    // Only implemented when `cmp` is true:
     bool operator>(const Self& other) const
     {
         static_assert(cmp, "'a>b' is only available for DistinctNumeric types with 'cmp'.");
@@ -147,9 +148,8 @@ public:
         return this->m_value <= other.m_value;
     }
     // 'operator<=>' cannot be implemented. See class comment.
-    // FIXME: cmp tests
 
-    // Only implemented when `truthy==true`:
+    // Only implemented when `truthy` is true:
     operator bool() const
     {
         static_assert(truthy, "'!a', 'a&&b', 'a||b' and similar operators are only available for DistinctNumeric types with 'truthy'.");
@@ -157,12 +157,35 @@ public:
     }
     // The default implementations for `operator!()`, `operator&&(bool)`, `operator||(bool)` const are fine.
 
-    // Only implemented when `flags==true`:
+    // Only implemented when `flags` is true:
     Self operator~() const;
     Self operator&(const Self&) const;
     Self operator|(const Self&) const;
     Self operator^(const Self&) const;
-    // The default implementations for `operator&=()`, `operator|=(bool)`, `operator^=(bool)` are probably fine.
+    Self& operator&=(const Self&);
+    Self& operator|=(const Self&);
+    Self& operator^=(const Self&);
+    // FIXME: impl, test
+
+    // Only implemented when `shift` is true:
+    // TODO: Should this take `int` instead?
+    Self operator<<(const Self&) const;
+    Self operator>>(const Self&) const;
+    Self& operator<<=(const Self&);
+    Self& operator>>=(const Self&);
+    // FIXME: impl, test
+
+    // Only implemented when `arith` is true:
+    Self operator+(const Self&) const;
+    Self operator-(const Self&) const;
+    Self operator+() const;
+    Self operator-() const;
+    Self operator*(const Self&) const;
+    Self operator/(const Self&) const;
+    Self operator%(const Self&) const;
+    // The default implementations for compound assignment are fine.
+    // FIXME: impl, test
+
 private:
     T m_value;
 };

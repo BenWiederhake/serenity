@@ -304,6 +304,21 @@ TEST_CASE(negative_incompatible)
     (void)(a + b);
     // error: ???
 }
+
+TEST_CASE(negative_incompatible)
+{
+    GeneralNumeric a = 12;
+    ArithNumeric b = 345;
+    // And this is the entire point of `DistinctNumeric`:
+    // Theoretically, the operation *could* be supported, but we declared those int types incompatible.
+    (void)(a + b);
+    // error: no match for ‘operator+’ (operand types are ‘GeneralNumeric’ {aka ‘AK::DistinctNumeric<int, true, true, true, true, true, true, 64, 64>’} and ‘ArithNumeric’ {aka ‘AK::DistinctNumeric<int, false, false, false, false, false, true, 64, 63>’})
+    //    313 |     (void)(a + b);
+    //        |            ~ ^ ~
+    //        |            |   |
+    //        |            |   DistinctNumeric<[...],false,false,false,false,false,[...],[...],63>
+    //        |            DistinctNumeric<[...],true,true,true,true,true,[...],[...],64>
+}
 #endif /* COMPILE_NEGATIVE_TESTS */
 
 TEST_MAIN(DistinctNumeric)

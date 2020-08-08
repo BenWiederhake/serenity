@@ -177,6 +177,22 @@ TEST_CASE(operator_flags)
     EXPECT_EQ(c, FlagsNumeric(0x03B));
 }
 
+TEST_CASE(operator_shift)
+{
+    ShiftNumeric a = 0x040;
+    EXPECT_EQ(a << ShiftNumeric(0), ShiftNumeric(0x040));
+    EXPECT_EQ(a << ShiftNumeric(1), ShiftNumeric(0x080));
+    EXPECT_EQ(a << ShiftNumeric(2), ShiftNumeric(0x100));
+    EXPECT_EQ(a >> ShiftNumeric(0), ShiftNumeric(0x040));
+    EXPECT_EQ(a >> ShiftNumeric(1), ShiftNumeric(0x020));
+    EXPECT_EQ(a >> ShiftNumeric(2), ShiftNumeric(0x010));
+
+    EXPECT_EQ(a <<= ShiftNumeric(5), ShiftNumeric(0x800));
+    EXPECT_EQ(a, ShiftNumeric(0x800));
+    EXPECT_EQ(a >>= ShiftNumeric(8), ShiftNumeric(0x008));
+    EXPECT_EQ(a, ShiftNumeric(0x008));
+}
+
 TEST_CASE(composability)
 {
     GeneralNumeric a = 0;
@@ -200,7 +216,8 @@ TEST_CASE(composability)
     EXPECT_EQ(a & b, GeneralNumeric(0));
     EXPECT_EQ(a | b, GeneralNumeric(1));
     // shift
-    // FIXME
+    EXPECT_EQ(b << GeneralNumeric(4), GeneralNumeric(0x10));
+    EXPECT_EQ(b >> b, GeneralNumeric(0));
     // arith
     // FIXME
 }

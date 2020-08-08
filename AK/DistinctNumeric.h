@@ -199,11 +199,28 @@ public:
 
     // Only implemented when `shift` is true:
     // TODO: Should this take `int` instead?
-    Self operator<<(const Self& other) const;
-    Self operator>>(const Self& other) const;
-    Self& operator<<=(const Self& other);
-    Self& operator>>=(const Self& other);
-    // FIXME: impl, test
+    Self operator<<(const Self& other) const
+    {
+        static_assert(shift, "'a<<b' is only available for DistinctNumeric types with 'shift'.");
+        return this->m_value << other.m_value;
+    }
+    Self operator>>(const Self& other) const
+    {
+        static_assert(shift, "'a>>b' is only available for DistinctNumeric types with 'shift'.");
+        return this->m_value >> other.m_value;
+    }
+    Self& operator<<=(const Self& other)
+    {
+        static_assert(shift, "'a<<=b' is only available for DistinctNumeric types with 'shift'.");
+        this->m_value <<= other.m_value;
+        return *this;
+    }
+    Self& operator>>=(const Self& other)
+    {
+        static_assert(shift, "'a>>=b' is only available for DistinctNumeric types with 'shift'.");
+        this->m_value >>= other.m_value;
+        return *this;
+    }
 
     // Only implemented when `arith` is true:
     Self operator+(const Self& other) const;

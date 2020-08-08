@@ -33,8 +33,8 @@ class ForType {
 public:
     static void check_size()
     {
-        TYPEDEF_DISTINCT_NUMERIC_GENERAL(T, true, true, true, true, true, true, NumericOfSignedType);
-        EXPECT_EQ(sizeof(T), sizeof(NumericOfSignedType));
+        TYPEDEF_DISTINCT_NUMERIC_GENERAL(T, false, false, false, false, false, false, TheNumeric);
+        EXPECT_EQ(sizeof(T), sizeof(TheNumeric));
     }
 };
 
@@ -65,8 +65,8 @@ TYPEDEF_DISTINCT_NUMERIC_GENERAL(int, true, true, true, true, true, true, Genera
 
 TEST_CASE(address_identity)
 {
-    GeneralNumeric a = 4;
-    GeneralNumeric b = 5;
+    BareNumeric a = 4;
+    BareNumeric b = 5;
     EXPECT_EQ(&a == &a, true);
     EXPECT_EQ(&a == &b, false);
     EXPECT_EQ(&a != &a, false);
@@ -175,6 +175,34 @@ TEST_CASE(operator_flags)
 
     EXPECT_EQ(b, FlagsNumeric(0xA60));
     EXPECT_EQ(c, FlagsNumeric(0x03B));
+}
+
+TEST_CASE(composability)
+{
+    GeneralNumeric a = 0;
+    GeneralNumeric b = 1;
+    // ident
+    EXPECT_EQ(a == a, true);
+    EXPECT_EQ(a == b, false);
+    // seq
+    EXPECT_EQ(++a, b);
+    EXPECT_EQ(a--, b);
+    EXPECT_EQ(a == b, false);
+    // cmp
+    EXPECT_EQ(a < b, true);
+    EXPECT_EQ(a >= b, false);
+    // truthy
+    EXPECT_EQ(!a, true);
+    EXPECT_EQ((bool)b, true);
+    EXPECT_EQ(a && b, false);
+    EXPECT_EQ(a || b, true);
+    // flags
+    EXPECT_EQ(a & b, GeneralNumeric(0));
+    EXPECT_EQ(a | b, GeneralNumeric(1));
+    // shift
+    // FIXME
+    // arith
+    // FIXME
 }
 
 TEST_MAIN(DistinctNumeric)

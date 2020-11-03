@@ -118,6 +118,7 @@ pushd "$DIR"
             echo "Cache at ${CACHED_TOOLCHAIN_ARCHIVE} does not exist."
             echo "Will rebuild toolchain from scratch, and save the result."
             echo "But first, getting rid of old, outdated caches. Current caches:"
+            mkdir -p "Cache/"
             pushd "Cache/"
                 ls -l
                 # Travis preserves timestamps. Don't ask me why, but it does.

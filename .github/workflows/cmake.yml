@@ -31,7 +31,7 @@ jobs:
       # e2fsprogs qemu-system-i386 qemu-utils
 
     - name: Check versions
-      run: g++ --version; clang-format --version; clang-format-10 --version true
+      run: set +e; g++ --version; g++-10 --version; clang-format --version; clang-format-10 --version
 
     - name: Run most lints
       run: ${{ github.workspace }}/Meta/lint-ci.sh

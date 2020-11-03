@@ -14,26 +14,24 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-# Remove GCC 9 (installed by default) and replace it with GCC 10:
-- sudo apt-get purge -y g++-9 libstdc++-9-dev
-# These aren't:
-- sudo apt-get install -y g++-10 libstdc++-10-dev libmpfr-dev libmpc-dev libgmp-dev clang-format-10
-- sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 60 --slave /usr/bin/g++ g++ /usr/bin/g++-10
+    # Do we need to update the package cache first?
+    # sudo apt-get update -qq
 
+    - name: Purge interfering packages
+      # Remove GCC 9 (installed by default)
+      run: sudo apt-get purge -y g++-9 libstdc++-9-dev
 
-    # TODO: Update, install, sanity-check versions
-# TRAVIS CODE:
-#- sudo apt-get update -qq
-## These packages are already part of the Travis image:
-##- sudo apt-get install -y g++-9 libstdc++-9-dev cmake shellcheck
-## These aren't:
-#- sudo apt-get install -y libmpfr-dev libmpc-dev libgmp-dev clang-format-10
-## If we ever do any qemu-emulation on Travis, we should re-enable this:
-##- e2fsprogs qemu-system-i386 qemu-utils
-#- g++ --version
-#- cmake --version
-#- shellcheck --version
+    - name: Install dependencies
+      # These packages are already part of the ubuntu-20.04 image:
+      # cmake shellcheck clang-format-10 libgmp-dev
+      # These aren't:
+      run: sudo apt-get install g++-10 libstdc++-10-dev libmpfr-dev libmpc-dev
+      # FIXME sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 60 --slave /usr/bin/g++ g++ /usr/bin/g++-10
+      # If we ever do any qemu-emulation on Github Actions, we should re-enable this:
+      # e2fsprogs qemu-system-i386 qemu-utils
 
+    - name: Check versions
+      run: g++ --version; cmake --version; shellcheck --version; clang-format --version; clang-format-10 --version true
 
     - name: Restore caches
       uses: actions/cache@v2

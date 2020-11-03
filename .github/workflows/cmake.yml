@@ -14,7 +14,26 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
+# Remove GCC 9 (installed by default) and replace it with GCC 10:
+- sudo apt-get purge -y g++-9 libstdc++-9-dev
+# These aren't:
+- sudo apt-get install -y g++-10 libstdc++-10-dev libmpfr-dev libmpc-dev libgmp-dev clang-format-10
+- sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 60 --slave /usr/bin/g++ g++ /usr/bin/g++-10
+
+
     # TODO: Update, install, sanity-check versions
+# TRAVIS CODE:
+#- sudo apt-get update -qq
+## These packages are already part of the Travis image:
+##- sudo apt-get install -y g++-9 libstdc++-9-dev cmake shellcheck
+## These aren't:
+#- sudo apt-get install -y libmpfr-dev libmpc-dev libgmp-dev clang-format-10
+## If we ever do any qemu-emulation on Travis, we should re-enable this:
+##- e2fsprogs qemu-system-i386 qemu-utils
+#- g++ --version
+#- cmake --version
+#- shellcheck --version
+
 
     - name: Restore caches
       uses: actions/cache@v2
@@ -31,26 +50,42 @@ jobs:
 #      # Some projects don't allow in-source building, so create a separate build directory
 #      # We'll use this as our working directory for all subsequent commands
 #      run: cmake -E make_directory ${{runner.workspace}}/build
-#
-#    - name: Configure CMake
-#      # Use a bash shell so we can use the same syntax for environment variable
-#      # access regardless of the host operating system
-#      shell: bash
-#      working-directory: ${{runner.workspace}}/build
-#      # Note the current convention is to use the -S and -B options here to specify source 
-#      # and build directories, but this is only available with CMake 3.13 and higher.  
-#      # The CMake binaries on the Github Actions machines are (as of this writing) 3.12
-#      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE
-#
+# TRAVIS CODE:
+# mkdir -p Build
+
 #    - name: Build
 #      working-directory: ${{runner.workspace}}/build
 #      shell: bash
 #      # Execute the build.  You can specify a specific target with "--target <NAME>"
 #      run: cmake --build . --config $BUILD_TYPE
-#
+# TRAVIS CODE:
+# cmake .. -DBUILD_LAGOM=1 -DALL_THE_DEBUG_MACROS=1
+# make -j2
+
 #    - name: Test
 #      working-directory: ${{runner.workspace}}/build
 #      shell: bash
 #      # Execute tests defined by the CMake configuration.  
 #      # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
 #      run: ctest -C $BUILD_TYPE
+# TRAVIS CODE:
+# ../Meta/check-symbols.sh
+# CTEST_OUTPUT_ON_FAILURE=1 make test
+# cd Meta/Lagom
+# DISABLE_DBG_OUTPUT=1 ./test-js
+
+#    - name: Monitor disk usage
+#      working-directory: ${{runner.workspace}}
+#      shell: bash
+#      run: du -ch * ; du -sch /home/travis/.ccache/* ; true
+
+# TRAVIS CODE:
+#notifications:
+#  irc:
+#    if: repo = SerenityOS/serenity
+#    channels:
+#      - "chat.freenode.net#serenityos"
+#    template:
+#      - "%{repository_slug}#%{build_number} (%{branch} - %{commit} : %{author}): %{message}"
+#      - "Subject: %{commit_subject}"
+#      - "Details: %{build_url}"

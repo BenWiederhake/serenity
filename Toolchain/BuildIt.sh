@@ -132,6 +132,7 @@ pushd "$DIR"
                 ls -l
             popd
         fi
+        echo "::group::Actually building Toolchain"
     fi
 popd
 
@@ -286,6 +287,7 @@ popd
 
 pushd "$DIR"
     if [ "${TRY_USE_LOCAL_TOOLCHAIN}" = "y" ] ; then
+        echo "::endgroup::"
         echo "Caching toolchain:"
 
         if [ -z "${DEPS_HASH}" ] ; then

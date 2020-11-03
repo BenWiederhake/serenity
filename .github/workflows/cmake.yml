@@ -23,7 +23,7 @@ jobs:
 
     - name: Install dependencies
       # These packages are already part of the ubuntu-20.04 image:
-      # cmake shellcheck clang-format-10 libgmp-dev
+      # clang-format-10 cmake shellcheck libgmp-dev
       # These aren't:
       run: sudo apt-get install g++-10 libstdc++-10-dev libmpfr-dev libmpc-dev
       # FIXME sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 60 --slave /usr/bin/g++ g++ /usr/bin/g++-10
@@ -31,7 +31,10 @@ jobs:
       # e2fsprogs qemu-system-i386 qemu-utils
 
     - name: Check versions
-      run: g++ --version; cmake --version; shellcheck --version; clang-format --version; clang-format-10 --version true
+      run: g++ --version; clang-format --version; clang-format-10 --version true
+
+    - name: Run most lints
+      run: ${{ github.workspace }}/Meta/lint-ci.sh
 
     - name: Restore caches
       uses: actions/cache@v2

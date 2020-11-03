@@ -302,6 +302,7 @@ pushd "$DIR"
             mkdir -p Cache/
             # We *most definitely* don't need debug symbols in the linker/compiler.
             # This cuts the uncompressed size from 1.2 GiB per Toolchain down to about 190 MiB.
+            echo "Stripping executables ..."
             echo "Before: $(du -sh Local)"
             find Local/ -type f -executable ! -name '*.la' ! -name '*.sh' ! -name 'mk*' -exec strip {} +
             echo "After: $(du -sh Local)"

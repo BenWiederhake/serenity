@@ -87,24 +87,24 @@ jobs:
 #      - "Subject: %{commit_subject}"
 #      - "Details: %{build_url}"
 
-    - name: IRC result notification
-      uses: rectalogic/notify-irc@v1
-      if: github.event_name == 'push' && job.status != 'cancelled'
-      with:
-        channel: "#serenityos"
-        nickname: serenity-ga
-        message: |
-          ${{ github.actor }} pushed ${{ github.event.ref }} ${{ github.event.compare }}: ${{ job.status }}
-          ${{ join(github.event.commits.*.message) }}
-
-    - name: IRC result notification
-      uses: rectalogic/notify-irc@v1
-      if: github.event_name == 'pull_request'
-      with:
-        channel: "#serenityos"
-        nickname: serenity-ga
-        message: |
-          ${{ github.actor }} opened PR ${{ github.event.html_url }}
-(20:13:35) travis-ci: SerenityOS/serenity#9818 (master - cfce6b3 : Andreas Kling): The build passed.
-(20:13:35) travis-ci: Subject: LibVT: Copying from terminal scrollback resulted in wrong text
-(20:13:35) travis-ci: Details: https://travis-ci.com/SerenityOS/serenity/builds/198023549
+#    - name: IRC result notification
+#      uses: rectalogic/notify-irc@v1
+#      if: github.event_name == 'push' && job.status != 'cancelled'
+#      with:
+#        channel: "#serenityos"
+#        nickname: serenity-ga
+#        message: |
+#          ${{ github.actor }} pushed ${{ github.event.ref }} ${{ github.event.compare }}: ${{ job.status }}
+#          ${{ join(github.event.commits.*.message) }}
+#
+#    - name: IRC result notification
+#      uses: rectalogic/notify-irc@v1
+#      if: github.event_name == 'pull_request'
+#      with:
+#        channel: "#serenityos"
+#        nickname: serenity-ga
+#        message: |
+#          ${{ github.actor }} opened PR ${{ github.event.html_url }}
+#(20:13:35) travis-ci: SerenityOS/serenity#9818 (master - cfce6b3 : Andreas Kling): The build passed.
+#(20:13:35) travis-ci: Subject: LibVT: Copying from terminal scrollback resulted in wrong text
+#(20:13:35) travis-ci: Details: https://travis-ci.com/SerenityOS/serenity/builds/198023549

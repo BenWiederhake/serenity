@@ -1,8 +1,6 @@
 name: CMake lint, build, test
 
-on:
-  - push
-  - pull_request
+on: [push, pull_request]
 
 env:
   SERENITY_ROOT: ${{ github.workspace }}
@@ -35,7 +33,7 @@ jobs:
     - name: Check versions
       run: set +e; g++ --version; g++-10 --version; clang-format --version; clang-format-10 --version
 
-    - name: Run most lints
+    - name: Lint (Phase 1/2)
       run: ${{ github.workspace }}/Meta/lint-ci.sh
 
     - name: Restore caches
@@ -50,10 +48,10 @@ jobs:
       run: TRY_USE_LOCAL_TOOLCHAIN=y ${{ github.workspace }}/Toolchain/BuildIt.sh
 
     - name: Create Build Directory
-      #run: cmake -E make_directory ${{ github.workspace }}/Build
+      working-directory: ${{ runner.workspace }}
       run: mkdir -p Build
 
-    - name: Create Build Directory
+    - name: Create Build Environment
       working-directory: ${{ runner.workspace }}/Build
       run: cmake .. -DBUILD_LAGOM=1 -DALL_THE_DEBUG_MACROS=1
 
@@ -61,22 +59,21 @@ jobs:
       working-directory: ${{ runner.workspace }}/Build
       run: cmake --build . -j2
 
-#    - name: Test
-#      working-directory: ${{ github.workspace }}/build
-#      shell: bash
-#      # Execute tests defined by the CMake configuration.  
-#      # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
-#      run: ctest -C $BUILD_TYPE
-# TRAVIS CODE:
-# ../Meta/check-symbols.sh
-# CTEST_OUTPUT_ON_FAILURE=1 make test
-# cd Meta/Lagom
-# DISABLE_DBG_OUTPUT=1 ./test-js
+    - name: Lint (Phase 2/2)
+      working-directory: ${{ github.workspace }}/Meta
+      run: ./check-symbols.sh
 
-#    - name: Monitor disk usage
-#      working-directory: ${{ runner.workspace }}
-#      shell: bash
-#      run: du -ch * ; du -sch /home/travis/.ccache/* ; true
+    - name: Run CMake tests
+      working-directory: ${{ github.workspace }}/Build
+      run: CTEST_OUTPUT_ON_FAILURE=1 make test
+
+    - name: Run JS tests
+      working-directory: ${{ github.workspace }}/Meta/Lagom
+      run: DISABLE_DBG_OUTPUT=1 ./test-js
+
+    - name: Monitor disk usage
+      working-directory: ${{ runner.workspace }}
+      run: du -ch Toolchain/Cache/* ; du -sch /home/travis/.ccache/* || true
 
 # TRAVIS CODE:
 #notifications:
@@ -88,25 +85,26 @@ jobs:
 #      - "%{repository_slug}#%{build_number} (%{branch} - %{commit} : %{author}): %{message}"
 #      - "Subject: %{commit_subject}"
 #      - "Details: %{build_url}"
-
-#    - name: IRC result notification
-#      uses: rectalogic/notify-irc@v1
-#      if: github.event_name == 'push' && job.status != 'cancelled'
-#      with:
-#        channel: "#serenityos"
-#        nickname: serenity-ga
-#        message: |
-#          ${{ github.actor }} pushed ${{ github.event.ref }} ${{ github.event.compare }}: ${{ job.status }}
-#          ${{ join(github.event.commits.*.message) }}
-#
-#    - name: IRC result notification
-#      uses: rectalogic/notify-irc@v1
-#      if: github.event_name == 'pull_request'
-#      with:
-#        channel: "#serenityos"
-#        nickname: serenity-ga
-#        message: |
-#          ${{ github.actor }} opened PR ${{ github.event.html_url }}
 #(20:13:35) travis-ci: SerenityOS/serenity#9818 (master - cfce6b3 : Andreas Kling): The build passed.
 #(20:13:35) travis-ci: Subject: LibVT: Copying from terminal scrollback resulted in wrong text
 #(20:13:35) travis-ci: Details: https://travis-ci.com/SerenityOS/serenity/builds/198023549
+
+    - name: IRC result notification (push)
+      uses: rectalogic/notify-irc@v1
+      if: github.event_name == 'push' && !cancelled()
+      with:
+        channel: "#irc-ga-test"
+        nickname: serenity-ga
+        message: |
+          ${{ github.actor }} pushed ${{ github.ref }} ${{ github.event.compare }}: ${{ job.status }}
+          ${{ join(github.event.commits.*.message) }}
+          Details: https://github.com/SerenityOS/serenity/runs/${{github.run_id}}?check_suite_focus=true
+
+    - name: IRC result notification
+      uses: rectalogic/notify-irc@v1
+      if: github.event_name == 'pull_request' && !cancelled()
+      with:
+        channel: "#irc-ga-test"
+        nickname: serenity-ga
+        message: |
+          ${{ github.actor }} opened PR ${{ github.event.html_url }}

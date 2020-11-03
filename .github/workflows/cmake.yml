@@ -47,21 +47,17 @@ jobs:
     - name: Restore or regenerate Toolchain
       run: TRY_USE_LOCAL_TOOLCHAIN=y ${{ github.workspace }}/Toolchain/BuildIt.sh
 
-#    - name: Create Build Environment
-#      # Some projects don't allow in-source building, so create a separate build directory
-#      # We'll use this as our working directory for all subsequent commands
-#      run: cmake -E make_directory ${{ github.workspace }}/build
-# TRAVIS CODE:
-# mkdir -p Build
+    - name: Create Build Directory
+      #run: cmake -E make_directory ${{ github.workspace }}/Build
+      run: mkdir -p Build
 
-#    - name: Build
-#      working-directory: ${{ runner.workspace }}/build
-#      shell: bash
-#      # Execute the build.  You can specify a specific target with "--target <NAME>"
-#      run: cmake --build . --config $BUILD_TYPE
-# TRAVIS CODE:
-# cmake .. -DBUILD_LAGOM=1 -DALL_THE_DEBUG_MACROS=1
-# make -j2
+    - name: Create Build Directory
+      working-directory: ${{ runner.workspace }}/Build
+      run: cmake .. -DBUILD_LAGOM=1 -DALL_THE_DEBUG_MACROS=1
+
+    - name: Build Serenity and Tests
+      working-directory: ${{ runner.workspace }}/Build
+      run: cmake --build . -j2
 
 #    - name: Test
 #      working-directory: ${{ github.workspace }}/build
@@ -90,3 +86,25 @@ jobs:
 #      - "%{repository_slug}#%{build_number} (%{branch} - %{commit} : %{author}): %{message}"
 #      - "Subject: %{commit_subject}"
 #      - "Details: %{build_url}"
+
+    - name: IRC result notification
+      uses: rectalogic/notify-irc@v1
+      if: github.event_name == 'push' && job.status != 'cancelled'
+      with:
+        channel: "#serenityos"
+        nickname: serenity-ga
+        message: |
+          ${{ github.actor }} pushed ${{ github.event.ref }} ${{ github.event.compare }}: ${{ job.status }}
+          ${{ join(github.event.commits.*.message) }}
+
+    - name: IRC result notification
+      uses: rectalogic/notify-irc@v1
+      if: github.event_name == 'pull_request'
+      with:
+        channel: "#serenityos"
+        nickname: serenity-ga
+        message: |
+          ${{ github.actor }} opened PR ${{ github.event.html_url }}
+(20:13:35) travis-ci: SerenityOS/serenity#9818 (master - cfce6b3 : Andreas Kling): The build passed.
+(20:13:35) travis-ci: Subject: LibVT: Copying from terminal scrollback resulted in wrong text
+(20:13:35) travis-ci: Details: https://travis-ci.com/SerenityOS/serenity/builds/198023549

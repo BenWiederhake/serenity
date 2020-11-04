@@ -47,64 +47,65 @@ jobs:
     - name: Restore or regenerate Toolchain
       run: TRY_USE_LOCAL_TOOLCHAIN=y ${{ github.workspace }}/Toolchain/BuildIt.sh
 
-    - name: Create Build Directory
-      working-directory: ${{ runner.workspace }}
-      run: mkdir -p Build
-
-    - name: Create Build Environment
-      working-directory: ${{ runner.workspace }}/Build
-      run: cmake .. -DBUILD_LAGOM=1 -DALL_THE_DEBUG_MACROS=1
-
-    - name: Build Serenity and Tests
-      working-directory: ${{ runner.workspace }}/Build
-      run: cmake --build . -j2
-
-    - name: Lint (Phase 2/2)
-      working-directory: ${{ github.workspace }}/Meta
-      run: ./check-symbols.sh
-
-    - name: Run CMake tests
-      working-directory: ${{ github.workspace }}/Build
-      run: CTEST_OUTPUT_ON_FAILURE=1 make test
-
-    - name: Run JS tests
-      working-directory: ${{ github.workspace }}/Meta/Lagom
-      run: DISABLE_DBG_OUTPUT=1 ./test-js
-
-    - name: Monitor disk usage
-      working-directory: ${{ runner.workspace }}
-      run: du -ch Toolchain/Cache/* ; du -sch /home/travis/.ccache/* || true
-
-# TRAVIS CODE:
-#notifications:
-#  irc:
-#    if: repo = SerenityOS/serenity
-#    channels:
-#      - "chat.freenode.net#serenityos"
-#    template:
-#      - "%{repository_slug}#%{build_number} (%{branch} - %{commit} : %{author}): %{message}"
-#      - "Subject: %{commit_subject}"
-#      - "Details: %{build_url}"
-#(20:13:35) travis-ci: SerenityOS/serenity#9818 (master - cfce6b3 : Andreas Kling): The build passed.
-#(20:13:35) travis-ci: Subject: LibVT: Copying from terminal scrollback resulted in wrong text
-#(20:13:35) travis-ci: Details: https://travis-ci.com/SerenityOS/serenity/builds/198023549
-
-    - name: IRC result notification (push)
-      uses: rectalogic/notify-irc@v1
-      if: github.event_name == 'push' && !cancelled()
-      with:
-        channel: "#irc-ga-test"
-        nickname: serenity-ga
-        message: |
-          ${{ github.actor }} pushed ${{ github.ref }} ${{ github.event.compare }}: ${{ job.status }}
-          ${{ join(github.event.commits.*.message) }}
-          Details: https://github.com/SerenityOS/serenity/runs/${{github.run_id}}?check_suite_focus=true
-
-    - name: IRC result notification
-      uses: rectalogic/notify-irc@v1
-      if: github.event_name == 'pull_request' && !cancelled()
-      with:
-        channel: "#irc-ga-test"
-        nickname: serenity-ga
-        message: |
-          ${{ github.actor }} opened PR ${{ github.event.html_url }}
+#    - name: Create Build Directory
+#      working-directory: ${{ runner.workspace }}
+#      run: mkdir -p Build
+#
+#    - name: Create Build Environment
+#      working-directory: ${{ runner.workspace }}/Build
+#      run: cmake .. -DBUILD_LAGOM=1 -DALL_THE_DEBUG_MACROS=1
+#
+#    - name: Build Serenity and Tests
+#      working-directory: ${{ runner.workspace }}/Build
+#      run: cmake --build . -j2
+#
+#    - name: Lint (Phase 2/2)
+#      working-directory: ${{ github.workspace }}/Meta
+#      run: ./check-symbols.sh
+#
+#    - name: Run CMake tests
+#      working-directory: ${{ github.workspace }}/Build
+#      run: CTEST_OUTPUT_ON_FAILURE=1 make test
+#
+#    - name: Run JS tests
+#      working-directory: ${{ github.workspace }}/Meta/Lagom
+#      run: DISABLE_DBG_OUTPUT=1 ./test-js
+#
+#    - name: Monitor disk usage
+#      working-directory: ${{ runner.workspace }}
+#      run: du -ch Toolchain/Cache/* ; du -sch /home/travis/.ccache/* || true
+#
+## TRAVIS CODE:
+##notifications:
+##  irc:
+##    if: repo = SerenityOS/serenity
+##    channels:
+##      - "chat.freenode.net#serenityos"
+##    template:
+##      - "%{repository_slug}#%{build_number} (%{branch} - %{commit} : %{author}): %{message}"
+##      - "Subject: %{commit_subject}"
+##      - "Details: %{build_url}"
+##(20:13:35) travis-ci: SerenityOS/serenity#9818 (master - cfce6b3 : Andreas Kling): The build passed.
+##(20:13:35) travis-ci: Subject: LibVT: Copying from terminal scrollback resulted in wrong text
+##(20:13:35) travis-ci: Details: https://travis-ci.com/SerenityOS/serenity/builds/198023549
+#
+#    # https://github.com/rectalogic/notify-irc
+#    - name: IRC result notification (direct push)
+#      uses: rectalogic/notify-irc@v1
+#      if: github.event_name == 'push' && !cancelled()
+#      with:
+#        channel: "#irc-ga-test"
+#        nickname: serenity-ga
+#        message: |
+#          ${{ github.actor }} pushed ${{ github.ref }} ${{ github.event.compare }}: ${{ job.status }}
+#          ${{ join(github.event.commits.*.message) }}
+#          Details: https://github.com/SerenityOS/serenity/runs/${{github.run_id}}?check_suite_focus=true
+#
+#    - name: IRC result notification (PR)
+#      uses: rectalogic/notify-irc@v1
+#      if: github.event_name == 'pull_request' && !cancelled()
+#      with:
+#        channel: "#irc-ga-test"
+#        nickname: serenity-ga
+#        message: |
+#          ${{ github.actor }} opened PR ${{ github.event.html_url }}

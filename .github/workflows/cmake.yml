@@ -44,16 +44,20 @@ jobs:
           ${{ github.workspace }}/Toolchain/Cache/
         key: ${{ runner.os }}-toolchain
 
+    - name: List caches
+      working-directory: ${{ runner.workspace }}/Toolchain/Cache/
+      run: pwd; ls -al
+
     - name: Restore or regenerate Toolchain
       run: TRY_USE_LOCAL_TOOLCHAIN=y ${{ github.workspace }}/Toolchain/BuildIt.sh
 
     - name: Create Build Directory
       working-directory: ${{ runner.workspace }}
-      run: mkdir -p Build
+      run: pwd; mkdir -p Build; ls
 
     - name: Create Build Environment
       working-directory: ${{ runner.workspace }}/Build
-      run: cmake .. -DBUILD_LAGOM=1 -DALL_THE_DEBUG_MACROS=1
+      run: pwd; ls ..; cmake .. -DBUILD_LAGOM=1 -DALL_THE_DEBUG_MACROS=1
 
     - name: Build Serenity and Tests
       working-directory: ${{ runner.workspace }}/Build
@@ -92,15 +96,14 @@ jobs:
     # https://github.com/rectalogic/notify-irc
     - name: IRC result notification (direct push)
       uses: rectalogic/notify-irc@v1
-      if: github.event_name == 'push' && !cancelled()
+      if: github.repository == 'BenWiederhake/serenity' && github.event_name == 'push' && !cancelled()
       with:
         channel: "#irc-ga-test"
         nickname: serenity-ga
         message: |
           ${{ github.actor }} pushed ${{ github.ref }} ${{ github.event.compare }}: ${{ job.status }}
           Commits: ${{ join(github.event.commits.*.message) }}
-          ${{github.run_id}}
-          Details: https://github.com/BenWiederhake/serenity/actions/runs/${{github.run_id}}
+          Details: https://github.com/${{ github.repository }}/actions/runs/${{github.run_id}}
 
     - name: IRC result notification (PR)
       uses: rectalogic/notify-irc@v1

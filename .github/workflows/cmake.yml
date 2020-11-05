@@ -45,8 +45,8 @@ jobs:
         key: ${{ runner.os }}-toolchain
 
     - name: List caches
-      working-directory: ${{ runner.workspace }}/Toolchain/Cache/
-      run: pwd; ls -al
+      working-directory: ${{ runner.workspace }}/Toolchain/
+      run: pwd; ls -al || true; ls -al Cache || true;
 
     - name: Restore or regenerate Toolchain
       run: TRY_USE_LOCAL_TOOLCHAIN=y ${{ github.workspace }}/Toolchain/BuildIt.sh

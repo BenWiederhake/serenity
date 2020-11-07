@@ -33,48 +33,48 @@ jobs:
     - name: Use GCC 10 instead
       run: sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 60 --slave /usr/bin/g++ g++ /usr/bin/g++-10
     - name: Check versions
-      run: set +e; g++ --version; g++-10 --version; clang-format --version; clang-format-10 --version
+      run: set +e; g++ --version; g++-10 --version; clang-format --version; clang-format-10 --version; python --version; python3 --version
 
     # === PREPARE FOR BUILDING ===
 
-    - name: Lint (Phase 1/2)
-      run: ${{ github.workspace }}/Meta/lint-ci.sh
-    - name: Toolchain cache
-      uses: actions/cache@v2
-      with:
-        path: ${{ github.workspace }}/Toolchain/Cache/
-        # This assumes that *ALL* LibC headers have an impact on the Toolchain.
-        # This is wrong, and causes more Toolchain rebuilds than necessary.
-        # However, we want to avoid false cache hits at all costs.
-        key: ${{ runner.os }}-toolchain-${{ hashFiles('Libraries/LibC/**/*.h') }}
-    - name: Restore or regenerate Toolchain
-      run: TRY_USE_LOCAL_TOOLCHAIN=y ${{ github.workspace }}/Toolchain/BuildIt.sh
-    # TODO: ccache
-    # https://cristianadam.eu/20200113/speeding-up-c-plus-plus-github-actions-using-ccache/
-    # https://github.com/cristianadam/HelloWorld/blob/master/.github/workflows/build_cmake.yml
-    - name: Create build environment
-      working-directory: ${{ github.workspace }}
-      # Note that this needs to run *even if* the Toolchain was built,
-      # in order to set options like BUILD_LAGOM.
-      run: |
-        mkdir -p Build
-        cd Build
-        cmake .. -DBUILD_LAGOM=1 -DALL_THE_DEBUG_MACROS=1
+#    - name: Lint (Phase 1/2)
+#      run: ${{ github.workspace }}/Meta/lint-ci.sh
+#    - name: Toolchain cache
+#      uses: actions/cache@v2
+#      with:
+#        path: ${{ github.workspace }}/Toolchain/Cache/
+#        # This assumes that *ALL* LibC headers have an impact on the Toolchain.
+#        # This is wrong, and causes more Toolchain rebuilds than necessary.
+#        # However, we want to avoid false cache hits at all costs.
+#        key: ${{ runner.os }}-toolchain-${{ hashFiles('Libraries/LibC/**/*.h') }}
+#    - name: Restore or regenerate Toolchain
+#      run: TRY_USE_LOCAL_TOOLCHAIN=y ${{ github.workspace }}/Toolchain/BuildIt.sh
+#    # TODO: ccache
+#    # https://cristianadam.eu/20200113/speeding-up-c-plus-plus-github-actions-using-ccache/
+#    # https://github.com/cristianadam/HelloWorld/blob/master/.github/workflows/build_cmake.yml
+#    - name: Create build environment
+#      working-directory: ${{ github.workspace }}
+#      # Note that this needs to run *even if* the Toolchain was built,
+#      # in order to set options like BUILD_LAGOM.
+#      run: |
+#        mkdir -p Build
+#        cd Build
+#        cmake .. -DBUILD_LAGOM=1 -DALL_THE_DEBUG_MACROS=1
 
     # === ACTUALLY BUILD AND TEST ===
 
-    - name: Build Serenity and Tests
-      working-directory: ${{ github.workspace }}/Build
-      run: cmake --build . -j2
-    - name: Lint (Phase 2/2)
-      working-directory: ${{ github.workspace }}/Meta
-      run: ./check-symbols.sh
-    - name: Run CMake tests
-      working-directory: ${{ github.workspace }}/Build
-      run: CTEST_OUTPUT_ON_FAILURE=1 make test
-    - name: Run JS tests
-      working-directory: ${{ github.workspace }}/Build/Meta/Lagom
-      run: DISABLE_DBG_OUTPUT=1 ./test-js
+#    - name: Build Serenity and Tests
+#      working-directory: ${{ github.workspace }}/Build
+#      run: cmake --build . -j2
+#    - name: Lint (Phase 2/2)
+#      working-directory: ${{ github.workspace }}/Meta
+#      run: ./check-symbols.sh
+#    - name: Run CMake tests
+#      working-directory: ${{ github.workspace }}/Build
+#      run: CTEST_OUTPUT_ON_FAILURE=1 make test
+#    - name: Run JS tests
+#      working-directory: ${{ github.workspace }}/Build/Meta/Lagom
+#      run: DISABLE_DBG_OUTPUT=1 ./test-js
 
     # === NOTIFICATIONS ===
     # https://github.com/rectalogic/notify-irc

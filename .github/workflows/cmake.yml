@@ -15,13 +15,14 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
+    # === OS SETUP ===
+
     # Do we need to update the package cache first?
     # sudo apt-get update -qq
 
     - name: Purge interfering packages
       # Remove GCC 9 (installed by default)
       run: sudo apt-get purge -y gcc-9 g++-9 libstdc++-9-dev
-
     - name: Install dependencies
       # These packages are already part of the ubuntu-20.04 image:
       # clang-format-10 cmake gcc-10 g++-10 shellcheck libgmp-dev
@@ -29,60 +30,57 @@ jobs:
       run: sudo apt-get install libstdc++-10-dev libmpfr-dev libmpc-dev
       # If we ever do any qemu-emulation on Github Actions, we should re-enable this:
       # e2fsprogs qemu-system-i386 qemu-utils
-
     - name: Use GCC 10 instead
       run: sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 60 --slave /usr/bin/g++ g++ /usr/bin/g++-10
-
     - name: Check versions
       run: set +e; g++ --version; g++-10 --version; clang-format --version; clang-format-10 --version
 
+    # === PREPARE FOR BUILDING ===
+
     - name: Lint (Phase 1/2)
       run: ${{ github.workspace }}/Meta/lint-ci.sh
-
-    - name: Restore caches
+    - name: Restore Toolchain cache
       uses: actions/cache@v2
       with:
-        # TODO: ccache
-        path: |
-          ${{ github.workspace }}/Toolchain/Cache/
+        path: ${{ github.workspace }}/Toolchain/Cache/
         # TODO: This assumes that *ALL* LibC headers have an impact on the Toolchain.
         # This is wrong, and causes more Toolchain rebuilds than necessary!
         key: ${{ runner.os }}-toolchain-${{ hashFiles('Libraries/LibC/**/*.h') }}
         # A way around this would be to generate a file list, including all the relevant hashes, and doing something like:
         # key: ${{ runner.os }}-toolchain-${{ hashFiles('Toolchain/my_magical_file_list_with_hashes.lst') }}
         # However, this has other disadvantages, so I went for the "stupid, slow, but always correct" way.
-
     - name: Restore or regenerate Toolchain
       run: TRY_USE_LOCAL_TOOLCHAIN=y ${{ github.workspace }}/Toolchain/BuildIt.sh
-
-    - name: Create Build Directory
+    # TODO: ccache
+    # https://cristianadam.eu/20200113/speeding-up-c-plus-plus-github-actions-using-ccache/
+    # https://github.com/cristianadam/HelloWorld/blob/master/.github/workflows/build_cmake.yml
+    - name: Create build environment
       working-directory: ${{ github.workspace }}
-      run: pwd; mkdir -p Build; ls
+      # Note that this needs to run *even if* the Toolchain was built,
+      # in order to set options like BUILD_LAGOM.
+      run: |
+        mkdir -p Build
+        cd Build
+        cmake .. -DBUILD_LAGOM=1 -DALL_THE_DEBUG_MACROS=1
 
-    - name: Create Build Environment
-      working-directory: ${{ github.workspace }}/Build
-      run: pwd; ls ..; cmake .. -DBUILD_LAGOM=1 -DALL_THE_DEBUG_MACROS=1
+    # === ACTUALLY BUILD AND TEST ===
 
     - name: Build Serenity and Tests
       working-directory: ${{ github.workspace }}/Build
       run: cmake --build . -j2
+    - name: Lint (Phase 2/2)
+      working-directory: ${{ github.workspace }}/Meta
+      run: ./check-symbols.sh
+    - name: Run CMake tests
+      working-directory: ${{ github.workspace }}/Build
+      run: CTEST_OUTPUT_ON_FAILURE=1 make test
+    - name: Run JS tests
+      working-directory: ${{ github.workspace }}/Meta/Lagom
+      run: DISABLE_DBG_OUTPUT=1 ./test-js
 
-#    - name: Lint (Phase 2/2)
-#      working-directory: ${{ github.workspace }}/Meta
-#      run: ./check-symbols.sh
-#
-#    - name: Run CMake tests
-#      working-directory: ${{ github.workspace }}/Build
-#      run: CTEST_OUTPUT_ON_FAILURE=1 make test
-#
-#    - name: Run JS tests
-#      working-directory: ${{ github.workspace }}/Meta/Lagom
-#      run: DISABLE_DBG_OUTPUT=1 ./test-js
-#
-#    - name: Monitor disk usage
-#      working-directory: ${{ github.workspace }}
-#      run: du -ch Toolchain/Cache/* ; du -sch /home/travis/.ccache/* || true
-#
+    # === NOTIFICATIONS ===
+    # (Here be dragons!)
+
 ## TRAVIS CODE:
 ##notifications:
 ##  irc:
@@ -108,7 +106,11 @@ jobs:
 #          ${{ github.actor }} pushed ${{ github.ref }} ${{ github.event.compare }}: ${{ job.status }}
 #          Commits: ${{ join(github.event.commits.*.message) }}
 #          Details: https://github.com/${{ github.repository }}/actions/runs/${{github.run_id}}
-#
+##(21:40:52) serenity-ga: BenWiederhake pushed refs/heads/master https://github.com/BenWiederhake/serenity/compare/bd2007d34c89...21cf551133fc: failure
+##(21:40:52) serenity-ga: Commits: Why sometimes *two* directories? Why *sometimes*?
+##(21:40:52) serenity-ga: Details: https://github.com/BenWiederhake/serenity/actions/runs/348228653
+##(21:40:53) serenity-ga:
+
 #    - name: IRC result notification (PR)
 #      uses: rectalogic/notify-irc@v1
 #      if: github.event_name == 'pull_request' && !cancelled()
@@ -117,3 +119,4 @@ jobs:
 #        nickname: serenity-ga
 #        message: |
 #          ${{ github.actor }} opened PR ${{ github.event.html_url }}
+# COMPLETELY UNTESTED!

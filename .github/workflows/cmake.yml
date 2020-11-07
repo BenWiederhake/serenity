@@ -79,20 +79,18 @@ jobs:
       run: DISABLE_DBG_OUTPUT=1 ./test-js
 
     # === NOTIFICATIONS ===
-    # (Here be dragons!)
-
     # https://github.com/rectalogic/notify-irc
+
     - name: IRC result notification (direct push)
       uses: rectalogic/notify-irc@v1
       if: github.repository == 'BenWiederhake/serenity' && github.event_name == 'push' && !cancelled()
       with:
         channel: "#irc-ga-test"
         nickname: serenity-ga
-        message: |
+        message: |-
           ${{ github.actor }} pushed ${{ github.ref }} ${{ github.event.compare }}: ${{ job.status }}
           Subject: ${{ join(github.event.commits.*.message) }}
           Details: https://github.com/${{ github.repository }}/actions/runs/${{github.run_id}}
-    # TODO: This has a trailing newline. Why?
 
 # COMPLETELY UNTESTED!
 #    - name: IRC result notification (PR)
@@ -101,5 +99,6 @@ jobs:
 #      with:
 #        channel: "#irc-ga-test"
 #        nickname: serenity-ga
-#        message: |
+#        message: |-
 #          ${{ github.actor }} opened PR ${{ github.event.html_url }}
+#          ${{ github.event.compare }}

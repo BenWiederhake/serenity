@@ -93,12 +93,12 @@ jobs:
           Details: https://github.com/${{ github.repository }}/actions/runs/${{github.run_id}}
 
 # COMPLETELY UNTESTED!
-#    - name: IRC result notification (PR)
-#      uses: rectalogic/notify-irc@v1
-#      if: github.event_name == 'pull_request' && !cancelled()
-#      with:
-#        channel: "#irc-ga-test"
-#        nickname: serenity-ga
-#        message: |-
-#          ${{ github.actor }} opened PR ${{ github.event.html_url }}
-#          ${{ github.event.compare }}
+    - name: IRC result notification (PR)
+      uses: rectalogic/notify-irc@v1
+      if: github.event_name == 'pull_request' && !cancelled()
+      with:
+        channel: "#irc-ga-test"
+        nickname: serenity-ga
+        message: |-
+          ${{ github.actor }} opened PR ${{ github.event.html_url }}
+          ${{ github.event.compare }}

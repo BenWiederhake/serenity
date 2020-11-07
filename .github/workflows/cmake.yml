@@ -39,7 +39,7 @@ jobs:
 
     - name: Lint (Phase 1/2)
       run: ${{ github.workspace }}/Meta/lint-ci.sh
-    - name: Restore Toolchain cache
+    - name: Toolchain cache
       uses: actions/cache@v2
       with:
         path: ${{ github.workspace }}/Toolchain/Cache/
@@ -75,42 +75,26 @@ jobs:
       working-directory: ${{ github.workspace }}/Build
       run: CTEST_OUTPUT_ON_FAILURE=1 make test
     - name: Run JS tests
-      working-directory: ${{ github.workspace }}/Meta/Lagom
+      working-directory: ${{ github.workspace }}/Build/Meta/Lagom
       run: DISABLE_DBG_OUTPUT=1 ./test-js
 
     # === NOTIFICATIONS ===
     # (Here be dragons!)
 
-## TRAVIS CODE:
-##notifications:
-##  irc:
-##    if: repo = SerenityOS/serenity
-##    channels:
-##      - "chat.freenode.net#serenityos"
-##    template:
-##      - "%{repository_slug}#%{build_number} (%{branch} - %{commit} : %{author}): %{message}"
-##      - "Subject: %{commit_subject}"
-##      - "Details: %{build_url}"
-##(20:13:35) travis-ci: SerenityOS/serenity#9818 (master - cfce6b3 : Andreas Kling): The build passed.
-##(20:13:35) travis-ci: Subject: LibVT: Copying from terminal scrollback resulted in wrong text
-##(20:13:35) travis-ci: Details: https://travis-ci.com/SerenityOS/serenity/builds/198023549
-#
-#    # https://github.com/rectalogic/notify-irc
-#    - name: IRC result notification (direct push)
-#      uses: rectalogic/notify-irc@v1
-#      if: github.repository == 'BenWiederhake/serenity' && github.event_name == 'push' && !cancelled()
-#      with:
-#        channel: "#irc-ga-test"
-#        nickname: serenity-ga
-#        message: |
-#          ${{ github.actor }} pushed ${{ github.ref }} ${{ github.event.compare }}: ${{ job.status }}
-#          Commits: ${{ join(github.event.commits.*.message) }}
-#          Details: https://github.com/${{ github.repository }}/actions/runs/${{github.run_id}}
-##(21:40:52) serenity-ga: BenWiederhake pushed refs/heads/master https://github.com/BenWiederhake/serenity/compare/bd2007d34c89...21cf551133fc: failure
-##(21:40:52) serenity-ga: Commits: Why sometimes *two* directories? Why *sometimes*?
-##(21:40:52) serenity-ga: Details: https://github.com/BenWiederhake/serenity/actions/runs/348228653
-##(21:40:53) serenity-ga:
+    # https://github.com/rectalogic/notify-irc
+    - name: IRC result notification (direct push)
+      uses: rectalogic/notify-irc@v1
+      if: github.repository == 'BenWiederhake/serenity' && github.event_name == 'push' && !cancelled()
+      with:
+        channel: "#irc-ga-test"
+        nickname: serenity-ga
+        message: |
+          ${{ github.actor }} pushed ${{ github.ref }} ${{ github.event.compare }}: ${{ job.status }}
+          Subject: ${{ join(github.event.commits.*.message) }}
+          Details: https://github.com/${{ github.repository }}/actions/runs/${{github.run_id}}
+    # TODO: This has a trailing newline. Why?
 
+# COMPLETELY UNTESTED!
 #    - name: IRC result notification (PR)
 #      uses: rectalogic/notify-irc@v1
 #      if: github.event_name == 'pull_request' && !cancelled()
@@ -119,4 +103,3 @@ jobs:
 #        nickname: serenity-ga
 #        message: |
 #          ${{ github.actor }} opened PR ${{ github.event.html_url }}
-# COMPLETELY UNTESTED!

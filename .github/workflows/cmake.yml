@@ -58,18 +58,18 @@ jobs:
       working-directory: ${{ github.workspace }}
       run: ls -al Toolchain/Cache || true
 
-#    - name: Create Build Directory
-#      working-directory: ${{ github.workspace }}
-#      run: pwd; mkdir -p Build; ls
-#
-#    - name: Create Build Environment
-#      working-directory: ${{ github.workspace }}/Build
-#      run: pwd; ls ..; cmake .. -DBUILD_LAGOM=1 -DALL_THE_DEBUG_MACROS=1
-#
-#    - name: Build Serenity and Tests
-#      working-directory: ${{ github.workspace }}/Build
-#      run: cmake --build . -j2
-#
+    - name: Create Build Directory
+      working-directory: ${{ github.workspace }}
+      run: pwd; mkdir -p Build; ls
+
+    - name: Create Build Environment
+      working-directory: ${{ github.workspace }}/Build
+      run: pwd; ls ..; cmake .. -DBUILD_LAGOM=1 -DALL_THE_DEBUG_MACROS=1
+
+    - name: Build Serenity and Tests
+      working-directory: ${{ github.workspace }}/Build
+      run: cmake --build . -j2
+
 #    - name: Lint (Phase 2/2)
 #      working-directory: ${{ github.workspace }}/Meta
 #      run: ./check-symbols.sh

@@ -90,6 +90,9 @@ jobs:
           Subject: ${{ join(github.event.commits.*.message) }}
           Details: https://github.com/${{ github.repository }}/actions/runs/${{github.run_id}}
 
+    - name: Dump event info
+      run: echo '${{ toJSON(github.event) }}'
+
 # COMPLETELY UNTESTED!
     - name: IRC result notification (PR)
       uses: rectalogic/notify-irc@v1
@@ -99,4 +102,3 @@ jobs:
         nickname: serenity-ga
         message: |-
           ${{ github.actor }} opened PR
-          ${{ toJSON(github.event) }}

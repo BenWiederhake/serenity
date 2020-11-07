@@ -28,6 +28,8 @@
 
 #include <AK/Types.h>
 
+// Dummy comment
+
 struct [[gnu::packed]] PtraceRegisters
 {
     u32 eax;

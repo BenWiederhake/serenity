@@ -47,33 +47,27 @@ jobs:
           ${{ github.workspace }}/Toolchain/Cache/
         key: ${{ runner.os }}-toolchain
 
-    - name: List caches
+    - name: List caches (before)
       working-directory: ${{ github.workspace }}
-      run: pwd
+      run: ls -al Toolchain/Cache || true
 
-    - name: List caches
+    - name: Restore or regenerate Toolchain
+      run: TRY_USE_LOCAL_TOOLCHAIN=y ${{ github.workspace }}/Toolchain/BuildIt.sh
+
+    - name: List caches (after)
       working-directory: ${{ github.workspace }}
-      run: |
-        pwd
-        echo "${{ github.workspace }}"
-        file serenity
-        ls -al || true
-        ls -al Toolchain || true
-        ls -al Toolchain/Cache || true
+      run: ls -al Toolchain/Cache || true
 
-#    - name: Restore or regenerate Toolchain
-#      run: TRY_USE_LOCAL_TOOLCHAIN=y ${{ github.workspace }}/Toolchain/BuildIt.sh
-#
 #    - name: Create Build Directory
-#      working-directory: ${{ runner.workspace }}
+#      working-directory: ${{ github.workspace }}
 #      run: pwd; mkdir -p Build; ls
 #
 #    - name: Create Build Environment
-#      working-directory: ${{ runner.workspace }}/Build
+#      working-directory: ${{ github.workspace }}/Build
 #      run: pwd; ls ..; cmake .. -DBUILD_LAGOM=1 -DALL_THE_DEBUG_MACROS=1
 #
 #    - name: Build Serenity and Tests
-#      working-directory: ${{ runner.workspace }}/Build
+#      working-directory: ${{ github.workspace }}/Build
 #      run: cmake --build . -j2
 #
 #    - name: Lint (Phase 2/2)
@@ -89,7 +83,7 @@ jobs:
 #      run: DISABLE_DBG_OUTPUT=1 ./test-js
 #
 #    - name: Monitor disk usage
-#      working-directory: ${{ runner.workspace }}
+#      working-directory: ${{ github.workspace }}
 #      run: du -ch Toolchain/Cache/* ; du -sch /home/travis/.ccache/* || true
 #
 ## TRAVIS CODE:

@@ -101,4 +101,5 @@ jobs:
         channel: "#irc-ga-test"
         nickname: serenity-ga
         message: |-
-          ${{ github.actor }} opened PR
+          ${{ github.actor }} ${{ github.event.action }}'d PR #${{ github.event.pull_request.number }}: ${{ github.event.pull_request.title }}
+          Details: ${{ github.event.pull_request._links.html }}

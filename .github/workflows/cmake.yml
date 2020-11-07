@@ -63,18 +63,18 @@ jobs:
 
     # === ACTUALLY BUILD AND TEST ===
 
-    - name: Build Serenity and Tests
-      working-directory: ${{ github.workspace }}/Build
-      run: cmake --build . -j2
-    - name: Lint (Phase 2/2)
-      working-directory: ${{ github.workspace }}/Meta
-      run: ./check-symbols.sh
-    - name: Run CMake tests
-      working-directory: ${{ github.workspace }}/Build
-      run: CTEST_OUTPUT_ON_FAILURE=1 make test
-    - name: Run JS tests
-      working-directory: ${{ github.workspace }}/Build/Meta/Lagom
-      run: DISABLE_DBG_OUTPUT=1 ./test-js
+#    - name: Build Serenity and Tests
+#      working-directory: ${{ github.workspace }}/Build
+#      run: cmake --build . -j2
+#    - name: Lint (Phase 2/2)
+#      working-directory: ${{ github.workspace }}/Meta
+#      run: ./check-symbols.sh
+#    - name: Run CMake tests
+#      working-directory: ${{ github.workspace }}/Build
+#      run: CTEST_OUTPUT_ON_FAILURE=1 make test
+#    - name: Run JS tests
+#      working-directory: ${{ github.workspace }}/Build/Meta/Lagom
+#      run: DISABLE_DBG_OUTPUT=1 ./test-js
 
     # === NOTIFICATIONS ===
     # https://github.com/rectalogic/notify-irc
@@ -98,5 +98,5 @@ jobs:
         channel: "#irc-ga-test"
         nickname: serenity-ga
         message: |-
-          ${{ github.actor }} opened PR ${{ github.event.html_url }}
-          ${{ github.event.compare }}
+          ${{ github.actor }} opened PR
+          ${{ github.event }}

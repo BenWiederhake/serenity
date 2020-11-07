@@ -99,7 +99,8 @@ jobs:
 
     - name: IRC result notification (direct push)
       uses: rectalogic/notify-irc@v1
-      if: github.repository == 'BenWiederhake/serenity' && github.ref == 'refs/heads/master' && github.event_name == 'push' && !cancelled()
+      #if: github.repository == 'BenWiederhake/serenity' && github.ref == 'refs/heads/master' && github.event_name == 'push' && !cancelled()
+      if: github.repository == 'BenWiederhake/serenity' && github.event_name == 'push' && !cancelled()
       with:
         channel: "#irc-ga-test"
         nickname: serenity-ga

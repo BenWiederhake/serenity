@@ -43,12 +43,10 @@ jobs:
       uses: actions/cache@v2
       with:
         path: ${{ github.workspace }}/Toolchain/Cache/
-        # TODO: This assumes that *ALL* LibC headers have an impact on the Toolchain.
-        # This is wrong, and causes more Toolchain rebuilds than necessary!
+        # This assumes that *ALL* LibC headers have an impact on the Toolchain.
+        # This is wrong, and causes more Toolchain rebuilds than necessary.
+        # However, we want to avoid false cache hits at all costs.
         key: ${{ runner.os }}-toolchain-${{ hashFiles('Libraries/LibC/**/*.h') }}
-        # A way around this would be to generate a file list, including all the relevant hashes, and doing something like:
-        # key: ${{ runner.os }}-toolchain-${{ hashFiles('Toolchain/my_magical_file_list_with_hashes.lst') }}
-        # However, this has other disadvantages, so I went for the "stupid, slow, but always correct" way.
     - name: Restore or regenerate Toolchain
       run: TRY_USE_LOCAL_TOOLCHAIN=y ${{ github.workspace }}/Toolchain/BuildIt.sh
     # TODO: ccache

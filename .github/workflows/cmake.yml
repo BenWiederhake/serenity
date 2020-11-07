@@ -3,6 +3,9 @@ name: CMake lint, build, test
 on: [push, pull_request]
 
 env:
+  # Don't mix these up!
+  # runner.workspace = /home/runner/work/serenity
+  # github.workspace = /home/runner/work/serenity/serenity
   SERENITY_ROOT: ${{ github.workspace }}
 
 jobs:
@@ -45,15 +48,11 @@ jobs:
         key: ${{ runner.os }}-toolchain
 
     - name: List caches
-      working-directory: ${{ runner.workspace }}
+      working-directory: ${{ github.workspace }}
       run: pwd
 
     - name: List caches
-      working-directory: ${{ runner.workspace }}/serenity
-      run: pwd
-
-    - name: List caches
-      working-directory: ${{ runner.workspace }}
+      working-directory: ${{ github.workspace }}
       run: |
         pwd
         echo "${{ github.workspace }}"

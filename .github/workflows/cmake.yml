@@ -99,4 +99,4 @@ jobs:
         nickname: serenity-ga
         message: |-
           ${{ github.actor }} opened PR
-          ${{ github.event }}
+          ${{ toJSON(github.event) }}

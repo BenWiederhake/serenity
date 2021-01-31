@@ -57,8 +57,14 @@ class IncludesDatabase:
             with open(self.filename, 'r') as fp:
                 self.data = json.load(fp)
         else:
-            self.data = dict(files=dict())
-            self.save()
+            self.data = dict()
+        # self.data is a dict.
+        # - The keys are the individual filenames.
+        # - The values are file-include-descriptions, which are a dict:
+        #     * key 'hashhex': value is a string, containing the hex of the sha256 of the entire file
+        #     * key 'includes': value is a list of:
+        #         * key 'line': value is a number, 0-indexed (add 1 before displaying to a human!)
+        #         * key 'necessary': value is either the string 'yes', 'no', or 'untested'
 
     def save(self):
         with open(self.filename, 'w') as fp:
@@ -74,7 +80,7 @@ class IncludesDatabase:
         for filename in all_files:
             if filename in self.data:
                 continue
-            self.data[filename] = dict(hashhex='NOT_SCANNED')
+            self.data[filename] = dict(hashhex='', includes='')
 
         # Populate self.data, actually do the scanning
 

@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 
+import hashlib
 import json
 import os
+import re
 import sys
 
 
 MAGIC_FLAG = '--modify-files-and-run-ninja'
+INCLUDE_REGEX = re.compile('^ *# *include ')
 
 
 def eprint(msg):
@@ -62,9 +65,9 @@ class IncludesDatabase:
         # - The keys are the individual filenames.
         # - The values are file-include-descriptions, which are a dict:
         #     * key 'hashhex': value is a string, containing the hex of the sha256 of the entire file
-        #     * key 'includes': value is a list of:
+        #     * key 'includes': value is a list of dicts:
         #         * key 'line': value is a number, 0-indexed (add 1 before displaying to a human!)
-        #         * key 'necessary': value is either the string 'yes', 'no', or 'untested'
+        #         * key 'necessary': value is either the string 'yes', 'no', or 'unknown'
 
     def save(self):
         with open(self.filename, 'w') as fp:
@@ -80,9 +83,22 @@ class IncludesDatabase:
         for filename in all_files:
             if filename in self.data:
                 continue
-            self.data[filename] = dict(hashhex='', includes='')
+            self.data[filename] = dict(hashhex='', includes=[])
 
         # Populate self.data, actually do the scanning
+        for filename, filedict in self.data.items():
+            with open(filename, 'rb') as fp:
+                file_contents = fp.read()
+            current_hash = hashlib.sha256(file_contents).hexdigest()
+            if current_hash == filedict['hashhex']:
+                continue
+            # Reset and recalculate 'includes' list:
+            filedict['includes'] = []
+            for i, line in file_contents.split(b'\n')
+                if INCLUDE_REGEX.match(line):
+                    
+
+        del file_contents
 
         # Save current state to disk
         self.save()

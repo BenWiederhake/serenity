@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from collections import Counter
+import atomicwrites
 import hashlib
 import json
 import os
@@ -10,11 +11,11 @@ import sys
 
 
 MAGIC_FLAG = '--modify-files-and-run-ninja'
-INCLUDE_REGEX = re.compile('^ *# *include ')
+INCLUDE_REGEX = re.compile(b'^ *# *include ')
 
 
-def eprint(msg):
-    print(msg, file=sys.stderr)
+def eprint(msg, end='\n'):
+    print(msg, end=end, file=sys.stderr)
 
 
 def check_context():
@@ -37,9 +38,9 @@ def check_context():
 
 
 def list_cpp_h_files(serenity_root):
-    return subprocess.run(
+    raw_result = subprocess.run(
         [
-            "git", "ls-files", serenity_root, "--",
+            "git", "ls-files", "--",
             "*.cpp",
             "*.h",
             #":!:Base",
@@ -49,8 +50,10 @@ def list_cpp_h_files(serenity_root):
             #":!:Userland/Libraries/LibCore/puff.cpp",
             #":!:Userland/Libraries/LibELF/exec_elf.h"
         ],
+        cwd=serenity_root,
         capture_output=True,
     ).stdout.decode().strip('\n').split('\n')
+    return [serenity_root + '/' + filename for filename in raw_result]
 
 
 def compute_data_hexhash(file_contents):
@@ -77,6 +80,7 @@ class ScopedChange:
             fp.write(content)
 
     def __enter__(self):
+        print('Entering {}'.format(self.filename))
         assert not self.is_changed
         self.is_changed = True
         with open(self.filename, 'rb') as fp:
@@ -115,22 +119,26 @@ class IncludesDatabase:
         #         * key 'status': value is either the string 'necessary', 'unnecessary', or 'unknown'
 
     def save(self):
-        with open(self.filename, 'w') as fp:
-            json.dump(fp, self.data, indent=2)
+        with atomicwrites.atomic_write(self.filename, overwrite=True) as fp:
+            json.dump(self.data, fp, indent=2)
 
     def scan_files(self):
-        all_files = set(list_cpp_h_files(self.root))
+        eprint('Scanning for new files ...', end='')
+        all_files = set(list_cpp_h_files(self.root)[:10])
 
         # Remove non-existing files from database entirely
-        self.data = {filename: filedata for filename, filedata in self.data if filename in all_files}
+        eprint('..', end='')
+        self.data = {filename: filedata for filename, filedata in self.data.items() if filename in all_files}
 
         # Add new files
+        eprint('..', end='')
         for filename in all_files:
             if filename in self.data:
                 continue
             self.data[filename] = dict(hexhash='', includes=[])
 
         # Populate self.data, actually do the scanning
+        eprint('..', end='')
         new_files, new_incs = 0, 0
         for filename, filedict in self.data.items():
             current_hash = compute_file_hexhash(filename)
@@ -143,11 +151,11 @@ class IncludesDatabase:
             filedict['hexhash'] = current_hash
             # Reset and recalculate 'includes' list:
             filedict['includes'] = []
-            for i, line_content in file_contents.split(b'\n'):
+            for i, line_content in enumerate(file_contents.split(b'\n')):
                 if INCLUDE_REGEX.match(line_content):
                     filedict['includes'].append(dict(line=i, status='unknown'))
                     new_incs += 1
-        eprint('Discovered {} new files (now {} in total) and {} new includes (now {} in total)'.format(
+        eprint('\nDiscovered {} new files (now {} in total) and {} new includes (now {} in total)'.format(
             new_files, len(self.data), new_incs, sum(len(filedict['includes']) for filedict in self.data.values())))
 
         # Save current state to disk

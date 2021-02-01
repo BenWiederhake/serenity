@@ -138,7 +138,7 @@ class IncludesDatabase:
             filedict['hexhash'] = current_hash
             # Reset and recalculate 'includes' list:
             filedict['includes'] = []
-            for i, line_content in file_contents.split(b'\n')
+            for i, line_content in file_contents.split(b'\n'):
                 if INCLUDE_REGEX.match(line_content):
                     filedict['includes'].append(dict(line=i, status='unknown'))
 
@@ -198,7 +198,9 @@ class IncludesDatabase:
 def does_it_build(how):
     eprint('Building {}'.format(how))
     result = subprocess.run('ninja', stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
-    return result.returncode == 0
+    success = result.returncode == 0
+    eprint(['Build failed (not necessarily an error)', 'Build succeeded (not necessarily good)'][success])
+    return success
 
 
 def run():
@@ -209,7 +211,7 @@ def run():
         # Don't call exit(1) as it skips the context's __exit__ method
         raise AssertionError('Does not build')
 
-    with ScopedChange(serenity_root + '/Meta/Lagom/TestApp.cpp', '#error "This should not compile"\n1=2\n'):
+    with ScopedChange(serenity_root + '/Meta/Lagom/TestApp.cpp', None, '#error "This should not compile"\n1=2\n'):
         if does_it_build('with broken Lagom'):
             eprint('Maybe you forgot to enable Lagom?')
             # Don't call exit(1) as it skips the context's __exit__ method
@@ -220,9 +222,9 @@ def run():
     db.complain_about_unnecessary()
 
     for recommendation in db.extract_recommended_checks():
+        eprint(('Trying', recommendation, is_necessary))  # Just in case
         with db.change_for_recommendation(recommendation):
             is_necessary = not does_it_build('with {}'.format(recommendation))
-        eprint((recommendation, is_necessary))  # Just in case
         db.report_recommendation(recommendation, is_necessary)
 
     eprint('Finished! All done. You can go home now.')

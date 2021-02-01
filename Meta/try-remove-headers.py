@@ -222,6 +222,7 @@ def does_it_build(how):
 
 
 def run():
+    eprint('Preflight checks ...')
     serenity_root = check_context()
 
     if not does_it_build('as-is'):

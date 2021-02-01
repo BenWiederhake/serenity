@@ -188,7 +188,7 @@ class IncludesDatabase:
         file_contents = file_contents.split(b'\n')
         assert len(file_contents) > line, (filename, len(file_contents), line, hexhash)
         file_contents[line] = b"// Let's try this without: " + file_contents[line]
-        file_contents = b''.join(file_contents)
+        file_contents = b'\n'.join(file_contents)
         return ScopedChange(filename, hexhash, file_contents)
 
     def stringify_recommendation(self, recommendation):

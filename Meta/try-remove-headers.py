@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from collections import Counter
 import hashlib
 import json
 import os
@@ -66,8 +67,9 @@ class ScopedChange:
     def __init__(self, filename, expect_hexhash, new_content):
         self.filename = filename
         self.expect_hexhash = expect_hexhash
+        assert isinstance(new_content, bytes)
         self.new_content = new_content
-        self.is_changed = True
+        self.is_changed = False
         self.old_content = None
 
     def _write(self, content):
@@ -85,6 +87,7 @@ class ScopedChange:
         self._write(self.new_content)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        print('Exiting {}'.format(self.filename))
         if exc_type is not None or exc_val is not None or exc_tb is not None:
             eprint('WARNING: Failed for file {}'.format(self.filename))
         if self.old_content is None:
@@ -128,6 +131,7 @@ class IncludesDatabase:
             self.data[filename] = dict(hexhash='', includes=[])
 
         # Populate self.data, actually do the scanning
+        new_files, new_incs = 0, 0
         for filename, filedict in self.data.items():
             current_hash = compute_file_hexhash(filename)
             with open(filename, 'rb') as fp:
@@ -135,12 +139,16 @@ class IncludesDatabase:
             current_hash = hashlib.sha256(file_contents).hexdigest()
             if filedict['hexhash'] == current_hash:
                 continue
+            new_files += 1
             filedict['hexhash'] = current_hash
             # Reset and recalculate 'includes' list:
             filedict['includes'] = []
             for i, line_content in file_contents.split(b'\n'):
                 if INCLUDE_REGEX.match(line_content):
                     filedict['includes'].append(dict(line=i, status='unknown'))
+                    new_incs += 1
+        eprint('Discovered {} new files (now {} in total) and {} new includes (now {} in total)'.format(
+            new_files, len(self.data), new_incs, sum(len(filedict['includes']) for filedict in self.data.values())))
 
         # Save current state to disk
         self.save()
@@ -177,6 +185,10 @@ class IncludesDatabase:
         file_contents = b''.join(file_contents)
         return ScopedChange(filename, hexhash, file_contents)
 
+    def stringify_recommendation(self, recommendation):
+        filename, line = recommendation
+        return 'without {}:{}'.format(filename, line + 1)
+
     def report_recommendation(self, recommendation, is_necessary):
         nec_string = 'necessary' if is_necessary else 'unnecessary'
         filename, line = recommendation
@@ -196,10 +208,10 @@ class IncludesDatabase:
 
 
 def does_it_build(how):
-    eprint('Building {}'.format(how))
+    eprint('Building {} ... '.format(how), end='')
     result = subprocess.run('ninja', stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
     success = result.returncode == 0
-    eprint(['Build failed (not necessarily an error)', 'Build succeeded (not necessarily good)'][success])
+    eprint(['failed', 'succeeded'][success])
     return success
 
 
@@ -211,7 +223,7 @@ def run():
         # Don't call exit(1) as it skips the context's __exit__ method
         raise AssertionError('Does not build')
 
-    with ScopedChange(serenity_root + '/Meta/Lagom/TestApp.cpp', None, '#error "This should not compile"\n1=2\n'):
+    with ScopedChange(serenity_root + '/Meta/Lagom/TestApp.cpp', None, b'#error "This should not compile"\n1=2\n'):
         if does_it_build('with broken Lagom'):
             eprint('Maybe you forgot to enable Lagom?')
             # Don't call exit(1) as it skips the context's __exit__ method
@@ -222,9 +234,10 @@ def run():
     db.complain_about_unnecessary()
 
     for recommendation in db.extract_recommended_checks():
-        eprint(('Trying', recommendation, is_necessary))  # Just in case
+        reason = db.stringify_recommendation(recommendation)
+        eprint(reason)  # Just in case
         with db.change_for_recommendation(recommendation):
-            is_necessary = not does_it_build('with {}'.format(recommendation))
+            is_necessary = not does_it_build(reason)
         db.report_recommendation(recommendation, is_necessary)
 
     eprint('Finished! All done. You can go home now.')

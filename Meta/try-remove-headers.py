@@ -4,6 +4,7 @@ import hashlib
 import json
 import os
 import re
+import subprocess
 import sys
 
 
@@ -51,6 +52,47 @@ def list_cpp_h_files(serenity_root):
     ).stdout.decode().strip('\n').split('\n')
 
 
+def compute_data_hexhash(file_contents):
+    return hashlib.sha256(file_contents).hexdigest()
+
+
+def compute_file_hexhash(filename):
+    with open(filename, 'rb') as fp:
+        file_contents = fp.read()
+    return compute_data_hexhash(file_contents)
+
+
+class ScopedChange:
+    def __init__(self, filename, expect_hexhash, new_content):
+        self.filename = filename
+        self.expect_hexhash = expect_hexhash
+        self.new_content = new_content
+        self.is_changed = True
+        self.old_content = None
+
+    def _write(self, content):
+        with open(self.filename, 'wb') as fp:
+            fp.write(content)
+
+    def __enter__(self):
+        assert not self.is_changed
+        self.is_changed = True
+        with open(self.filename, 'rb') as fp:
+            self.old_content = fp.read()
+        if self.expect_hexhash is not None:
+            actual_hexhash = compute_data_hexhash(self.old_content)
+            assert actual_hexhash == self.expect_hexhash, (filename, actual_hexhash, self.expect_hexhash)
+        self._write(self.new_content)
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if exc_type is not None or exc_val is not None or exc_tb is not None:
+            eprint('WARNING: Failed for file {}'.format(self.filename))
+        if self.old_content is None:
+            # Nothing to roll back to; we probably crashed during read.
+            return
+        self._write(self.old_content)
+
+
 class IncludesDatabase:
     def __init__(self, root):
         self.filename = 'inclusions_db.json'
@@ -64,10 +106,10 @@ class IncludesDatabase:
         # self.data is a dict.
         # - The keys are the individual filenames.
         # - The values are file-include-descriptions, which are a dict:
-        #     * key 'hashhex': value is a string, containing the hex of the sha256 of the entire file
+        #     * key 'hexhash': value is a string, either empty or contains the hex of the sha256 of the entire file
         #     * key 'includes': value is a list of dicts:
         #         * key 'line': value is a number, 0-indexed (add 1 before displaying to a human!)
-        #         * key 'necessary': value is either the string 'yes', 'no', or 'unknown'
+        #         * key 'status': value is either the string 'necessary', 'unnecessary', or 'unknown'
 
     def save(self):
         with open(self.filename, 'w') as fp:
@@ -83,52 +125,107 @@ class IncludesDatabase:
         for filename in all_files:
             if filename in self.data:
                 continue
-            self.data[filename] = dict(hashhex='', includes=[])
+            self.data[filename] = dict(hexhash='', includes=[])
 
         # Populate self.data, actually do the scanning
         for filename, filedict in self.data.items():
+            current_hash = compute_file_hexhash(filename)
             with open(filename, 'rb') as fp:
                 file_contents = fp.read()
             current_hash = hashlib.sha256(file_contents).hexdigest()
-            if current_hash == filedict['hashhex']:
+            if filedict['hexhash'] == current_hash:
                 continue
+            filedict['hexhash'] = current_hash
             # Reset and recalculate 'includes' list:
             filedict['includes'] = []
-            for i, line in file_contents.split(b'\n')
-                if INCLUDE_REGEX.match(line):
-                    
-
-        del file_contents
+            for i, line_content in file_contents.split(b'\n')
+                if INCLUDE_REGEX.match(line_content):
+                    filedict['includes'].append(dict(line=i, status='unknown'))
 
         # Save current state to disk
         self.save()
 
+    def complain_about_unnecessary(self):
+        # If we read the database from disk, we probably should
+        # complain *again* about known-unnecessary includes.
+        for filename, filedict in self.data.items():
+            for include in filedict['includes']:
+                if include['status'] != 'unnecessary':
+                    continue
+                print('{}:{}: Unnecessary include found! [cached]'.format(filename, include['line'] + 1))
+
+    def extract_recommended_checks(self):
+        recommendations = []
+        for filename, filedict in self.data.items():
+            for include in filedict['includes']:
+                if include['status'] != 'unknown':
+                    continue
+                # This has the added benefit of switching files as rarely as possible.
+                recommendations.append((filename, include['line']))
+        return recommendations
+
+    def change_for_recommendation(self, recommendation):
+        filename, line = recommendation
+        hexhash = self.data[filename]['hexhash']
+        with open(filename, 'rb') as fp:
+            file_contents = fp.read()
+        actual_hexhash = compute_data_hexhash(file_contents)
+        assert actual_hexhash == hexhash, (filename, hexhash, actual_hexhash, line)
+        file_contents = file_contents.split(b'\n')
+        assert len(file_contents) > line, (filename, len(file_contents), line, hexhash)
+        file_contents[line] = b"// Let's try this without: " + file_contents[line]
+        file_contents = b''.join(file_contents)
+        return ScopedChange(filename, hexhash, file_contents)
+
+    def report_recommendation(self, recommendation, is_necessary):
+        nec_string = 'necessary' if is_necessary else 'unnecessary'
+        filename, line = recommendation
+        # Dang, this is accidentally quadratic.
+        # If a file has i includes, this will cause i iterations, and will be called i times.
+        # Thankfully, the number of includes should be small anyway.
+        for include in self.data[filename]['includes']:
+            if include['line'] != line:
+                continue
+            assert include['status'] == 'unknown', (filename, line, nec_string, include)
+            include['status'] = nec_string
+            if nec_string != 'necessary':
+                print('{}:{}: ***NEW*** unnecessary include found!'.format(filename, line + 1))
+            self.save()
+            return
+        raise AssertionError((filename, line, nec_string))
+
+
+def does_it_build(how):
+    eprint('Building {}'.format(how))
+    result = subprocess.run('ninja', stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+    return result.returncode == 0
 
 
 def run():
     serenity_root = check_context()
 
-    #if not does_it_build('as-is'):
-    #    print('')
-    #    raise NotImplementedError
+    if not does_it_build('as-is'):
+        eprint('Does not build?! Aborting cowardly!')
+        # Don't call exit(1) as it skips the context's __exit__ method
+        raise AssertionError('Does not build')
 
-    #with replaced_file('Lagom/file/', '#error "This should not compile"'):
-    ## FIXME: Intentionally break some lagom-only code
-    #    if does_it_build('with broken Lagom'):
-    #        print('')
-    #        raise NotImplementedError
+    with ScopedChange(serenity_root + '/Meta/Lagom/TestApp.cpp', '#error "This should not compile"\n1=2\n'):
+        if does_it_build('with broken Lagom'):
+            eprint('Maybe you forgot to enable Lagom?')
+            # Don't call exit(1) as it skips the context's __exit__ method
+            raise AssertionError('Use -DBUILD_LAGOM=ON')
 
     db = IncludesDatabase(serenity_root)
-    db.update()
+    db.scan_files()
     db.complain_about_unnecessary()
 
-    while True
-        file_and_line = db.next_unchecked_include()
-        if file_and_line is None:
-            break
-        raise NotImplementedError
+    for recommendation in db.extract_recommended_checks():
+        with db.change_for_recommendation(recommendation):
+            is_necessary = not does_it_build('with {}'.format(recommendation))
+        eprint((recommendation, is_necessary))  # Just in case
+        db.report_recommendation(recommendation, is_necessary)
 
-    eprint('Finished! All ')
+    eprint('Finished! All done. You can go home now.')
 
 
 if __name__ == '__main__':

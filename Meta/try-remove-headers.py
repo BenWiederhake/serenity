@@ -80,7 +80,6 @@ class ScopedChange:
             fp.write(content)
 
     def __enter__(self):
-        print('Entering {}'.format(self.filename))
         assert not self.is_changed
         self.is_changed = True
         with open(self.filename, 'rb') as fp:
@@ -91,7 +90,6 @@ class ScopedChange:
         self._write(self.new_content)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        print('Exiting {}'.format(self.filename))
         if exc_type is not None or exc_val is not None or exc_tb is not None:
             eprint('WARNING: Failed for file {}'.format(self.filename))
         if self.old_content is None:
@@ -124,7 +122,7 @@ class IncludesDatabase:
 
     def scan_files(self):
         eprint('Scanning for new files ...', end='')
-        all_files = set(list_cpp_h_files(self.root)[:10])
+        all_files = set(list_cpp_h_files(self.root)[:100])
 
         # Remove non-existing files from database entirely
         eprint('..', end='')
@@ -243,7 +241,6 @@ def run():
 
     for recommendation in db.extract_recommended_checks():
         reason = db.stringify_recommendation(recommendation)
-        eprint(reason)  # Just in case
         with db.change_for_recommendation(recommendation):
             is_necessary = not does_it_build(reason)
         db.report_recommendation(recommendation, is_necessary)

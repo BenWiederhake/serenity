@@ -16,6 +16,7 @@ INCLUDE_REGEX = re.compile(b'^ *# *include ')
 
 def eprint(msg, end='\n'):
     print(msg, end=end, file=sys.stderr)
+    sys.stderr.flush()
 
 
 def check_context():
@@ -222,8 +223,9 @@ def does_it_build(how):
 
 
 def run():
-    eprint('Preflight checks ...')
+    eprint('Preflight checks ... ', end='')
     serenity_root = check_context()
+    eprint('complete')
 
     if not does_it_build('as-is'):
         eprint('Does not build?! Aborting cowardly!')

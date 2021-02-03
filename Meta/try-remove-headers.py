@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-from collections import Counter
 import atomicwrites
 import hashlib
 import json
@@ -12,6 +11,7 @@ import sys
 
 MAGIC_FLAG = '--modify-files-and-run-ninja'
 INCLUDE_REGEX = re.compile(b'^ *# *include ')
+# git ls-files -- '*.cpp' '*.h' | xargs grep -Ph '^ *# *include ' | sort -u | tee includes.txt
 
 
 def eprint(msg, end='\n'):
@@ -44,12 +44,12 @@ def list_cpp_h_files(serenity_root):
             "git", "ls-files", "--",
             "*.cpp",
             "*.h",
-            #":!:Base",
-            #":!:Kernel/FileSystem/ext2_fs.h",
-            #":!:Userland/Libraries/LibC/getopt.cpp",
-            #":!:Userland/Libraries/LibCore/puff.h",
-            #":!:Userland/Libraries/LibCore/puff.cpp",
-            #":!:Userland/Libraries/LibELF/exec_elf.h"
+            # ":!:Base",
+            # ":!:Kernel/FileSystem/ext2_fs.h",
+            # ":!:Userland/Libraries/LibC/getopt.cpp",
+            # ":!:Userland/Libraries/LibCore/puff.h",
+            # ":!:Userland/Libraries/LibCore/puff.cpp",
+            # ":!:Userland/Libraries/LibELF/exec_elf.h"
         ],
         cwd=serenity_root,
         capture_output=True,
@@ -87,7 +87,7 @@ class ScopedChange:
             self.old_content = fp.read()
         if self.expect_hexhash is not None:
             actual_hexhash = compute_data_hexhash(self.old_content)
-            assert actual_hexhash == self.expect_hexhash, (filename, actual_hexhash, self.expect_hexhash)
+            assert actual_hexhash == self.expect_hexhash, (self.filename, actual_hexhash, self.expect_hexhash)
         self._write(self.new_content)
 
     def __exit__(self, exc_type, exc_val, exc_tb):

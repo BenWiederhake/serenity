@@ -131,7 +131,7 @@ class IncludesDatabase:
         #         * key 'line_content': line in question (kinda redundant, but not quite)
 
         if os.path.exists('whitelist.json'):
-            eprint('Using given whitelist at whitelist.json.'.format(self.filename))
+            eprint('Using given whitelist at whitelist.json.')
             with open('whitelist.json', 'r') as fp:
                 raw_whitelist = json.load(fp)
         else:
@@ -243,11 +243,15 @@ class IncludesDatabase:
     def complain_about_unnecessary(self):
         # If we read the database from disk, we probably should
         # complain *again* about known-unnecessary includes.
+        any_complaints = False
         for filename, filedict in self.data.items():
             for include in filedict['includes']:
                 if include['status'] != 'unnecessary':
                     continue
                 self.print_complaint(include)
+                any_complaints = True
+        if any_complaints:
+            eprint('=== (Old complaints complete)')
 
     def extract_recommended_checks(self):
         recommendations_by_type = defaultdict(list)

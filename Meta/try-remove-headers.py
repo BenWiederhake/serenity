@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from collections import Counter, defaultdict
 import atomicwrites
 import hashlib
 import json
@@ -10,8 +11,17 @@ import sys
 
 
 MAGIC_FLAG = '--modify-files-and-run-ninja'
-INCLUDE_REGEX = re.compile(b'^ *# *include ')
+
 # git ls-files -- '*.cpp' '*.h' | xargs grep -Ph '^ *# *include ' | sort -u | tee includes.txt
+INCLUDE_REGEX = re.compile(b'^ *# *include ')
+
+# This only skips the following includes, which (at the time of writing) are all false-positives:
+# git ls-files -- '*.cpp' '*.h' | xargs grep -Pn '^# *include <[a-z]+>' | sed -Ee 's,:#,: #,'
+CLASS_REGEX = re.compile(b'^ *# *include .*/([^/\\.]+)\\.h[>"]')
+
+KNOWN_STATI = {'necessary', 'class', 'unknown', 'weird', 'unmentioned', 'unnecessary'}
+# Technically we don't know anything about 'class' includes, but these would be false positives anyway.
+CHECK_STATI_ORDER = {'unmentioned', 'weird', 'unknown'}
 
 
 def eprint(msg, end='\n'):
@@ -114,8 +124,10 @@ class IncludesDatabase:
         # - The values are file-include-descriptions, which are a dict:
         #     * key 'hexhash': value is a string, either empty or contains the hex of the sha256 of the entire file
         #     * key 'includes': value is a list of dicts:
-        #         * key 'line': value is a number, 0-indexed (add 1 before displaying to a human!)
-        #         * key 'status': value is either the string 'necessary', 'unnecessary', or 'unknown'
+        #         * key 'line_number': value is a number, 0-indexed (add 1 before displaying to a human!)
+        #         * key 'status': value is any of the strings in KNOWN_STATI
+        #         * key 'filename': value is the filename (redundant, but makes things easier)
+        #         * key 'line_content': line in question (kinda redundant, but not quite)
 
     def save(self):
         with atomicwrites.atomic_write(self.filename, overwrite=True) as fp:
@@ -138,7 +150,7 @@ class IncludesDatabase:
 
         # Populate self.data, actually do the scanning
         eprint('..', end='')
-        new_files, new_incs = 0, 0
+        new_files, new_incs, new_by_type = 0, 0, Counter()
         for filename, filedict in self.data.items():
             current_hash = compute_file_hexhash(filename)
             with open(filename, 'rb') as fp:
@@ -150,12 +162,46 @@ class IncludesDatabase:
             filedict['hexhash'] = current_hash
             # Reset and recalculate 'includes' list:
             filedict['includes'] = []
+            classname_from_filename = filename.split('/')[-1].split('.')[0].encode()
             for i, line_content in enumerate(file_contents.split(b'\n')):
-                if INCLUDE_REGEX.match(line_content):
-                    filedict['includes'].append(dict(line=i, status='unknown'))
-                    new_incs += 1
+                if not INCLUDE_REGEX.match(line_content):
+                    continue
+                status = 'unknown'
+                # Is this the class header?
+                if classname_from_filename in line_content:
+                    status = 'class'
+                else:
+                    # Try to determine what class this includes:
+                    included_class = CLASS_REGEX.match(line_content)
+                    if included_class is not None:
+                        # Yes, this is a class-like!
+                        # Is it mentioned anywhere in the file?
+                        occurrences = len(re.findall(re.escape(included_class.groups(1)), file_contents))
+                        if occurrences < 1:
+                            # We always match the include itself, so this cannot happen.
+                            eprint('{}:{}: "{}", but cannot find "{}"?!'.format(
+                                filename, i + 1, line_content, included_class))
+                        elif occurrences == 1:
+                            # The included class is mentioned nowhere in the file. Suspicious.
+                            status = 'unmentioned'
+                    else:
+                        # This is a weird header.
+                        status = 'weird'
+                assert status in KNOWN_STATI, status
+                filedict['includes'].append(dict(
+                    line_number=i, line_content=line_content, status=status, filename=filename))
+                new_incs += 1
+                new_by_type[status] += 1
+
         eprint('\nDiscovered {} new files (now {} in total) and {} new includes (now {} in total)'.format(
             new_files, len(self.data), new_incs, sum(len(filedict['includes']) for filedict in self.data.values())))
+        eprint('Discovered includes by type:', new_by_type)
+        total_by_type = Counter()
+        for filedict in self.data.values():
+            for include in filedict['includes']:
+                assert include in KNOWN_STATI
+                total_by_type[include['status']] += 1
+        eprint('Total includes by type:', total_by_type)
 
         # Save current state to disk
         self.save()
@@ -170,48 +216,62 @@ class IncludesDatabase:
                 print('{}:{}: Unnecessary include found! [cached]'.format(filename, include['line'] + 1))
 
     def extract_recommended_checks(self):
-        recommendations = []
+        recommendations_by_type = defaultdict(list)
         for filename, filedict in self.data.items():
             for include in filedict['includes']:
-                if include['status'] != 'unknown':
+                assert include in KNOWN_STATI
+                if include['status'] not in CHECK_STATI_ORDER:
                     continue
                 # This has the added benefit of switching files as rarely as possible.
-                recommendations.append((filename, include['line']))
+                recommendations_by_type[include['status']].append(include)
+        recommendations = []
+        for status in CHECK_STATI_ORDER:
+            recommendations.extend(recommendations_by_type[status])
         return recommendations
 
     def change_for_recommendation(self, recommendation):
-        filename, line = recommendation
-        hexhash = self.data[filename]['hexhash']
+        filename = recommendation['filename']
+        line_number = recommendation['line_number']
+        expected_hexhash = self.data[filename]['hexhash']
         with open(filename, 'rb') as fp:
             file_contents = fp.read()
         actual_hexhash = compute_data_hexhash(file_contents)
-        assert actual_hexhash == hexhash, (filename, hexhash, actual_hexhash, line)
+        assert actual_hexhash == expected_hexhash, (expected_hexhash, actual_hexhash, recommendation)
         file_contents = file_contents.split(b'\n')
-        assert len(file_contents) > line, (filename, len(file_contents), line, hexhash)
-        file_contents[line] = b"// Let's try this without: " + file_contents[line]
+        assert len(file_contents) > line_number, (len(file_contents), recommendation)
+        assert file_contents[line_number] == recommendation['line_content'], \
+            (file_contents[line_number], recommendation)
+        file_contents[line_number] = b"// Let's try this without: " + file_contents[line_number]
         file_contents = b'\n'.join(file_contents)
-        return ScopedChange(filename, hexhash, file_contents)
+        return ScopedChange(filename, expected_hexhash, file_contents)
 
     def stringify_recommendation(self, recommendation):
         filename, line = recommendation
-        return 'without {}:{}'.format(filename, line + 1)
+        return 'without {}:{}: /* {} // {} */'.format(
+            recommendation['filename'],
+            recommendation['line_number'] + 1,
+            recommendation['line_content'],
+            recommendation['status']
+        )
 
     def report_recommendation(self, recommendation, is_necessary):
-        nec_string = 'necessary' if is_necessary else 'unnecessary'
-        filename, line = recommendation
-        # Dang, this is accidentally quadratic.
-        # If a file has i includes, this will cause i iterations, and will be called i times.
-        # Thankfully, the number of includes should be small anyway.
-        for include in self.data[filename]['includes']:
-            if include['line'] != line:
-                continue
-            assert include['status'] == 'unknown', (filename, line, nec_string, include)
-            include['status'] = nec_string
-            if nec_string != 'necessary':
-                print('{}:{}: ***NEW*** unnecessary include found!'.format(filename, line + 1))
-            self.save()
-            return
-        raise AssertionError((filename, line, nec_string))
+        # This assert is accidentally quadratic. Delete it if this gets slow.
+        assert recommendation in self.data[recommendation['filename']]['includes']
+
+        new_status = 'necessary' if is_necessary else 'unnecessary'
+        assert 'necessary' not in recommendation['status']
+        recommendation['status'] = new_status
+
+        # This assert is accidentally quadratic. Delete it if this gets slow.
+        assert recommendation in self.data[recommendation['filename']]['includes']
+
+        if not is_necessary:
+            print('{}:{}: ***NEW*** unnecessary include found!  /* {} */'.format(
+                recommendation['filename'],
+                recommendation['line_number'] + 1,
+                recommendation['line_content'],
+            ))
+        self.save()
 
 
 def does_it_build(how):

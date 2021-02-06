@@ -265,11 +265,17 @@ class IncludesDatabase:
         # This assert is accidentally quadratic. Delete it if this gets slow.
         assert recommendation in self.data[recommendation['filename']]['includes']
 
+        display_filename = recommendation['filename']
+        if display_filename.startswith(self.root):
+            display_filename = display_filename[len(self.root):]
+
         if not is_necessary:
-            print('{}:{}: ***NEW*** unnecessary include found!  /* {} */'.format(
-                recommendation['filename'],
+            print('***NEW*** unnecessary include found! {}:{}: {} // ["{}", "{}"],'.format(
+                display_filename,
                 recommendation['line_number'] + 1,
                 recommendation['line_content'],
+                recommendation['filename'],
+                recommendation['line_number'] + 1,
             ))
         self.save()
 

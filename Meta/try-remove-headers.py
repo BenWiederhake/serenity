@@ -176,7 +176,8 @@ class IncludesDatabase:
                     if included_class is not None:
                         # Yes, this is a class-like!
                         # Is it mentioned anywhere in the file?
-                        occurrences = len(re.findall(re.escape(included_class.groups(1)), file_contents))
+                        included_class = included_class.groups(1)[0]
+                        occurrences = len(re.findall(re.escape(included_class), file_contents))
                         if occurrences < 1:
                             # We always match the include itself, so this cannot happen.
                             eprint('{}:{}: "{}", but cannot find "{}"?!'.format(
@@ -189,19 +190,19 @@ class IncludesDatabase:
                         status = 'weird'
                 assert status in KNOWN_STATI, status
                 filedict['includes'].append(dict(
-                    line_number=i, line_content=line_content, status=status, filename=filename))
+                    line_number=i, line_content=line_content.decode(), status=status, filename=filename))
                 new_incs += 1
                 new_by_type[status] += 1
 
         eprint('\nDiscovered {} new files (now {} in total) and {} new includes (now {} in total)'.format(
             new_files, len(self.data), new_incs, sum(len(filedict['includes']) for filedict in self.data.values())))
-        eprint('Discovered includes by type:', new_by_type)
+        eprint('Discovered includes by type: {}'.format(new_by_type))
         total_by_type = Counter()
         for filedict in self.data.values():
             for include in filedict['includes']:
-                assert include in KNOWN_STATI
+                assert include['status'] in KNOWN_STATI
                 total_by_type[include['status']] += 1
-        eprint('Total includes by type:', total_by_type)
+        eprint('Total includes by type: {}'.format(total_by_type))
 
         # Save current state to disk
         self.save()
@@ -219,7 +220,7 @@ class IncludesDatabase:
         recommendations_by_type = defaultdict(list)
         for filename, filedict in self.data.items():
             for include in filedict['includes']:
-                assert include in KNOWN_STATI
+                assert include['status'] in KNOWN_STATI
                 if include['status'] not in CHECK_STATI_ORDER:
                     continue
                 # This has the added benefit of switching files as rarely as possible.
@@ -239,14 +240,13 @@ class IncludesDatabase:
         assert actual_hexhash == expected_hexhash, (expected_hexhash, actual_hexhash, recommendation)
         file_contents = file_contents.split(b'\n')
         assert len(file_contents) > line_number, (len(file_contents), recommendation)
-        assert file_contents[line_number] == recommendation['line_content'], \
+        assert file_contents[line_number].decode() == recommendation['line_content'], \
             (file_contents[line_number], recommendation)
         file_contents[line_number] = b"// Let's try this without: " + file_contents[line_number]
         file_contents = b'\n'.join(file_contents)
         return ScopedChange(filename, expected_hexhash, file_contents)
 
     def stringify_recommendation(self, recommendation):
-        filename, line = recommendation
         return 'without {}:{}: /* {} // {} */'.format(
             recommendation['filename'],
             recommendation['line_number'] + 1,

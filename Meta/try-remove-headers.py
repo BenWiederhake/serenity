@@ -21,7 +21,7 @@ CLASS_REGEX = re.compile(b'^ *# *include .*/([^/\\.]+)\\.h[>"]')
 
 KNOWN_STATI = {'necessary', 'class', 'unknown', 'weird', 'unmentioned', 'unnecessary'}
 # Technically we don't know anything about 'class' includes, but these would be false positives anyway.
-CHECK_STATI_ORDER = {'unmentioned', 'weird', 'unknown'}
+CHECK_STATI_ORDER = ['unmentioned', 'weird', 'unknown']
 
 
 def eprint(msg, end='\n'):
@@ -131,7 +131,7 @@ class IncludesDatabase:
         #         * key 'line_content': line in question (kinda redundant, but not quite)
 
         if os.path.exists('whitelist.json'):
-            eprint('Using cached database. To remove the cache, delete {}.'.format(self.filename))
+            eprint('Using given whitelist at whitelist.json.'.format(self.filename))
             with open('whitelist.json', 'r') as fp:
                 raw_whitelist = json.load(fp)
         else:
@@ -144,8 +144,8 @@ class IncludesDatabase:
 
         self.whitelist = defaultdict(set)
         for raw_entry in raw_whitelist:
-            for filename, line_content in raw_entry:
-                self.whitelist[filename].add(line_content)
+            filename, line_content = raw_entry
+            self.whitelist[filename].add(line_content)
 
     def save(self):
         with atomicwrites.atomic_write(self.filename, overwrite=True) as fp:
@@ -215,9 +215,9 @@ class IncludesDatabase:
         # The whitelist can only now be applied, because we want to apply it to both the items
         # from the file database, as well as what we just scanned.
         changed_to_whitelist = 0
-        for filedict in self.data.values():
+        for filename, filedict in self.data.items():
             for include in filedict['includes']:
-                if include['line_content'] not in self.whitelist[filedict['filename']]:
+                if include['line_content'] not in self.whitelist[filename]:
                     continue
                 assert include['status'] in KNOWN_STATI
                 if include['status'] == 'necessary':
@@ -247,7 +247,7 @@ class IncludesDatabase:
             for include in filedict['includes']:
                 if include['status'] != 'unnecessary':
                     continue
-                print('{}:{}: Unnecessary include found! [cached]'.format(filename, include['line'] + 1))
+                self.print_complaint(include)
 
     def extract_recommended_checks(self):
         recommendations_by_type = defaultdict(list)
@@ -287,6 +287,21 @@ class IncludesDatabase:
             recommendation['status']
         )
 
+    def print_complaint(self, complaint):
+        display_filename = complaint['filename']
+        if display_filename.startswith(self.root):
+            display_filename = display_filename[len(self.root):]
+        if display_filename.startswith('/'):
+            display_filename = display_filename[1:]
+
+        print('****** Unnecessary include found! ****** {}:{}: {} // ["{}", "{}"],'.format(
+            display_filename,
+            complaint['line_number'] + 1,
+            complaint['line_content'],
+            complaint['filename'],
+            complaint['line_content'],
+        ))
+
     def report_recommendation(self, recommendation, is_necessary):
         # This assert is accidentally quadratic. Delete it if this gets slow.
         assert recommendation in self.data[recommendation['filename']]['includes']
@@ -298,18 +313,8 @@ class IncludesDatabase:
         # This assert is accidentally quadratic. Delete it if this gets slow.
         assert recommendation in self.data[recommendation['filename']]['includes']
 
-        display_filename = recommendation['filename']
-        if display_filename.startswith(self.root):
-            display_filename = display_filename[len(self.root):]
-
         if not is_necessary:
-            print('***NEW*** unnecessary include found! {}:{}: {} // ["{}", "{}"],'.format(
-                display_filename,
-                recommendation['line_number'] + 1,
-                recommendation['line_content'],
-                recommendation['filename'],
-                recommendation['line_number'] + 1,
-            ))
+            self.print_complaint(recommendation)
         self.save()
 
 

@@ -113,6 +113,7 @@ class IncludesDatabase:
     def __init__(self, root):
         self.filename = 'inclusions_db.json'
         self.root = root
+
         if os.path.exists(self.filename):
             eprint('Using cached database. To remove the cache, delete {}.'.format(self.filename))
             with open(self.filename, 'r') as fp:
@@ -128,6 +129,23 @@ class IncludesDatabase:
         #         * key 'status': value is any of the strings in KNOWN_STATI
         #         * key 'filename': value is the filename (redundant, but makes things easier)
         #         * key 'line_content': line in question (kinda redundant, but not quite)
+
+        if os.path.exists('whitelist.json'):
+            eprint('Using cached database. To remove the cache, delete {}.'.format(self.filename))
+            with open('whitelist.json', 'r') as fp:
+                raw_whitelist = json.load(fp)
+        else:
+            raw_whitelist = []
+            eprint('You can create a whitelist.json. Those entries will always be ignored.')
+        # raw_whitelist is a list.
+        # - The entries are tuples, represented as a list:
+        #     * First comes the full, absolute filename (whitelists are not portable, sorry)
+        #     * The line content that is allowed to be ignored, for example "#include <AK/StringView.h>".
+
+        self.whitelist = defaultdict(set)
+        for raw_entry in raw_whitelist:
+            for filename, line_content in raw_entry:
+                self.whitelist[filename].add(line_content)
 
     def save(self):
         with atomicwrites.atomic_write(self.filename, overwrite=True) as fp:
@@ -194,8 +212,23 @@ class IncludesDatabase:
                 new_incs += 1
                 new_by_type[status] += 1
 
+        # The whitelist can only now be applied, because we want to apply it to both the items
+        # from the file database, as well as what we just scanned.
+        changed_to_whitelist = 0
+        for filedict in self.data.values():
+            for include in filedict['includes']:
+                if include['line_content'] not in self.whitelist[filedict['filename']]:
+                    continue
+                assert include['status'] in KNOWN_STATI
+                if include['status'] == 'necessary':
+                    # Already marked, no need to do anything.
+                    continue
+                include['status'] = 'necessary'
+                changed_to_whitelist += 1
+
         eprint('\nDiscovered {} new files (now {} in total) and {} new includes (now {} in total)'.format(
             new_files, len(self.data), new_incs, sum(len(filedict['includes']) for filedict in self.data.values())))
+        eprint('Converted {} to "necessary" by the whitelist'.format(changed_to_whitelist))
         eprint('Discovered includes by type: {}'.format(new_by_type))
         total_by_type = Counter()
         for filedict in self.data.values():

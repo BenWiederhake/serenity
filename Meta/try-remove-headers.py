@@ -298,10 +298,11 @@ class IncludesDatabase:
         if display_filename.startswith('/'):
             display_filename = display_filename[1:]
 
-        print('****** Unnecessary include found! ****** {}:{}: {} // ["{}", "{}"],'.format(
+        print('****** Unnecessary include found! ****** {}:{}: {} // {} ["{}", "{}"],'.format(
             display_filename,
             complaint['line_number'] + 1,
             complaint['line_content'],
+            complaint['status'],
             complaint['filename'],
             complaint['line_content'],
         ))
@@ -350,7 +351,9 @@ def run():
     db.scan_files()
     db.complain_about_unnecessary()
 
-    for recommendation in db.extract_recommended_checks():
+    for checks_done, recommendation in enumerate(db.extract_recommended_checks()):
+        if checks_done % 10 == 0:
+            eprint()
         reason = db.stringify_recommendation(recommendation)
         with db.change_for_recommendation(recommendation):
             is_necessary = not does_it_build(reason)

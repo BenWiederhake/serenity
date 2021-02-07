@@ -23,6 +23,8 @@ KNOWN_STATI = {'necessary', 'class', 'unknown', 'weird', 'unmentioned', 'unneces
 # Technically we don't know anything about 'class' includes, but these would be false positives anyway.
 CHECK_STATI_ORDER = ['weird', 'unmentioned', 'unknown']
 
+WHITELIST_INCLUDES = {'#include <AK/Types.h>'}
+
 
 def eprint(msg, end='\n'):
     print(msg, end=end, file=sys.stderr)
@@ -217,7 +219,8 @@ class IncludesDatabase:
         changed_to_whitelist = 0
         for filename, filedict in self.data.items():
             for include in filedict['includes']:
-                if include['line_content'] not in self.whitelist[filename]:
+                if include['line_content'] not in self.whitelist[filename] \
+                        and include['line_content'] not in WHITELIST_INCLUDES:
                     continue
                 assert include['status'] in KNOWN_STATI
                 if include['status'] == 'necessary':

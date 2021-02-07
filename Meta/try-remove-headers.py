@@ -325,7 +325,7 @@ class IncludesDatabase:
 
 def does_it_build(how):
     eprint('Building {} ... '.format(how), end='')
-    result = subprocess.run('ninja', stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+    result = subprocess.run(['ninja', '-j1'], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
     success = result.returncode == 0
     eprint(['failed', 'succeeded'][success])
     return success

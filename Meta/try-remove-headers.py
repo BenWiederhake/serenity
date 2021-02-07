@@ -13,7 +13,7 @@ import sys
 MAGIC_FLAG = '--modify-files-and-run-ninja'
 
 # git ls-files -- '*.cpp' '*.h' | xargs grep -Ph '^ *# *include ' | sort -u | tee includes.txt
-INCLUDE_REGEX = re.compile(b'^ *# *include ')
+INCLUDE_REGEX = re.compile(b'^ *# *include .*<')
 
 # This only skips the following includes, which (at the time of writing) are all false-positives:
 # git ls-files -- '*.cpp' '*.h' | xargs grep -Pn '^# *include <[a-z]+>' | sed -Ee 's,:#,: #,'
@@ -28,7 +28,9 @@ WHITELIST_INCLUDES = set()
 # This influences 'unmentioned' classification.
 ASSOCIATED_CLASSES_REGEXES = dict(
     Assertions=[b'ASSERT', b'assert'],
-    StdLibExtras=[b'(?<![a-zA-Z0-9_:])(move|swap|)', b'EnableIf', b'Conditional', b'forward', b'Void', b'declval'],
+    StdLibExtras=[b'(?<![a-zA-Z0-9_:])(move|swap|)', b'EnableIf', b'Conditional', b'forward', b'Void',
+                  b'declval', b'round_up_to_power_of_two', b'array_size', b'min', b'max', b'clamp',
+                  b'ceil_div', b'(True|False|Void)Type'],
     Types=[b'FlatPtr', b'(?<![a-zA-Z0-9_:])[ui](8|16|32|64)'],
     HashFunctions=[b'hash_double'],
     Platform=[b'count_trailing_zeroes_32'],
@@ -214,13 +216,17 @@ class IncludesDatabase:
 
         return filedict, new_by_type
 
-    def merge_filedicts(fd_old, fd_new):
+    def merge_filedicts(self, fd_old, fd_new):
         if fd_new['hexhash'] != fd_old['hexhash']:
             return fd_new
-        # We rescanned it to apply new whitelisting rules. Therefore, take the "better" of the two results:
         incs_old = fd_old['includes']
         incs_new = fd_new['includes']
-        assert len(incs_old) == len(incs_new), (incs_old['filename'], len(incs_old), len(incs_new))
+        if len(incs_old) != len(incs_new):
+            # Don't trust the cache anymore.
+            return fd_new
+
+        # fd_new uses the new whitelisting rules, and fd_old remembers valuable experimental data.
+        # Therefore, take the "better" of the two results:
         for i_old, i_new in zip(incs_old, incs_new):
             #         * key 'line_number': value is a number, 0-indexed (add 1 before displaying to a human!)
             #         * key 'status': value is any of the strings in KNOWN_STATI
@@ -273,7 +279,7 @@ class IncludesDatabase:
             # X   N   X   X   X   X   X
             # old
 
-        return incs_old
+        return fd_old
 
     def scan_files(self):
         eprint('Scanning for new files ...', end='')
@@ -292,12 +298,14 @@ class IncludesDatabase:
 
         # Populate self.data, actually do the scanning
         eprint('..', end='')
-        new_files, new_by_type = 0, 0, Counter()
+        new_files, new_by_type = 0, Counter()
         for filename, filedict in self.data.items():
             filedict_new, file_new_by_type = self.scan_single_file(filename)
             new_by_type.update(file_new_by_type)
+            filedict_merged = self.merge_filedicts(filedict, filedict_new)
+            assert set(filedict_merged.keys()) == set(filedict.keys()), (filedict, filedict_merged)
             # This only works because all keys are always set:
-            filedict.update(self.merge_filedicts(filedict, filedict_new))
+            filedict.update(filedict_merged)
 
         # The whitelist can only now be applied, because we want to apply it to both the items
         # from the file database, as well as what we just scanned.

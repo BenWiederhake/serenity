@@ -26,7 +26,6 @@
 
 #include <AK/Singleton.h>
 #include <AK/StringView.h>
-#include <AK/Types.h>
 #include <Kernel/Arch/PC/BIOS.h>
 #include <Kernel/DMI.h>
 #include <Kernel/StdLib.h>

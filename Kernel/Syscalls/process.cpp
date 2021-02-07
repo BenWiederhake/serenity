@@ -24,7 +24,6 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <AK/Types.h>
 #include <Kernel/Process.h>
 
 namespace Kernel {

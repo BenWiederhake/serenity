@@ -27,7 +27,6 @@
 #include <AK/TestSuite.h>
 
 #include <AK/HashFunctions.h>
-#include <AK/Types.h>
 
 TEST_CASE(int_hash)
 {

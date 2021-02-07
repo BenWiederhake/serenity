@@ -26,7 +26,6 @@
 
 #include <AK/OwnPtr.h>
 #include <AK/RefPtr.h>
-#include <AK/Types.h>
 #include <Kernel/Storage/IDEController.h>
 #include <Kernel/Storage/PATADiskDevice.h>
 

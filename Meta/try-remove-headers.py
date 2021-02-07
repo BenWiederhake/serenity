@@ -23,7 +23,7 @@ KNOWN_STATI = {'necessary', 'class', 'unknown', 'weird', 'unmentioned', 'unneces
 # Technically we don't know anything about 'class' includes, but these would be false positives anyway.
 CHECK_STATI_ORDER = ['weird', 'unmentioned', 'unknown']
 
-WHITELIST_INCLUDES = {'#include <AK/Types.h>'}
+WHITELIST_INCLUDES = {'#include <AK/Types.h>', '#include <AK/StdLibExtras.h>'}
 
 
 def eprint(msg, end='\n'):
@@ -121,6 +121,7 @@ class IncludesDatabase:
             with open(self.filename, 'r') as fp:
                 self.data = json.load(fp)
         else:
+            eprint('Building new database in {}.'.format(self.filename))
             self.data = dict()
         # self.data is a dict.
         # - The keys are the individual filenames.
@@ -155,7 +156,7 @@ class IncludesDatabase:
 
     def scan_files(self):
         eprint('Scanning for new files ...', end='')
-        all_files = set(list_cpp_h_files(self.root)[:100])
+        all_files = set(list_cpp_h_files(self.root))
 
         # Remove non-existing files from database entirely
         eprint('..', end='')
@@ -328,7 +329,7 @@ class IncludesDatabase:
 
 def does_it_build(how):
     eprint('Building {} ... '.format(how), end='')
-    result = subprocess.run(['ninja', '-j1'], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+    result = subprocess.run(['ninja', '-j3'], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
     success = result.returncode == 0
     eprint(['failed', 'succeeded'][success])
     return success

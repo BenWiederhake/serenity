@@ -21,7 +21,7 @@ CLASS_REGEX = re.compile(b'^ *# *include .*/([^/\\.]+)\\.h[>"]')
 
 KNOWN_STATI = {'necessary', 'class', 'unknown', 'weird', 'unmentioned', 'unnecessary'}
 # Technically we don't know anything about 'class' includes, but these would be false positives anyway.
-CHECK_STATI_ORDER = ['unmentioned', 'weird', 'unknown']
+CHECK_STATI_ORDER = ['weird', 'unmentioned', 'unknown']
 
 
 def eprint(msg, end='\n'):
@@ -351,9 +351,10 @@ def run():
     db.scan_files()
     db.complain_about_unnecessary()
 
-    for checks_done, recommendation in enumerate(db.extract_recommended_checks()):
+    all_recommendations = db.extract_recommended_checks()
+    for checks_done, recommendation in enumerate(all_recommendations):
         if checks_done % 10 == 0:
-            eprint()
+            eprint('Completed {} of {} checks.'.format(checks_done, len(all_recommendations)))
         reason = db.stringify_recommendation(recommendation)
         with db.change_for_recommendation(recommendation):
             is_necessary = not does_it_build(reason)

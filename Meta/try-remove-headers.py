@@ -23,7 +23,15 @@ KNOWN_STATI = {'necessary', 'class', 'unknown', 'weird', 'unmentioned', 'unneces
 # Technically we don't know anything about 'class' includes, but these would be false positives anyway.
 CHECK_STATI_ORDER = ['weird', 'unmentioned', 'unknown']
 
-WHITELIST_INCLUDES = {'#include <AK/Types.h>', '#include <AK/StdLibExtras.h>'}
+# WHITELIST_INCLUDES = {'#include <AK/Types.h>', '#include <AK/StdLibExtras.h>'}
+WHITELIST_INCLUDES = set()
+# This influences 'unmentioned' classification.
+ASSOCIATED_CLASSES_REGEXES = dict(
+    Assertions=['ASSERT', 'assert'],
+    StdLibExtras=['(?<![a-zA-Z0-9_:])(move|swap|)', 'EnableIf', 'Conditional', 'forward', 'Void', 'declval'],
+    Types=['FlatPtr', '(?<![a-zA-Z0-9_:])[ui](8|16|32|64)'],
+    HashFunctions=['hash_double'],
+)
 
 
 def eprint(msg, end='\n'):
@@ -197,8 +205,10 @@ class IncludesDatabase:
                     if included_class is not None:
                         # Yes, this is a class-like!
                         # Is it mentioned anywhere in the file?
-                        included_class = included_class.groups(1)[0]
-                        occurrences = len(re.findall(re.escape(included_class), file_contents))
+                        included_class_re = re.escape(included_class.groups(1)[0])
+                        relevant_classes = ASSOCIATED_CLASSES_REGEXES.get(included_class, list) + included_class_re
+                        relevant_classes_re = '|'.join(relevant_classes)
+                        occurrences = len(re.findall(relevant_classes_re, file_contents))
                         if occurrences < 1:
                             # We always match the include itself, so this cannot happen.
                             eprint('{}:{}: "{}", but cannot find "{}"?!'.format(

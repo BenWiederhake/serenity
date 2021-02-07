@@ -17,7 +17,7 @@ INCLUDE_REGEX = re.compile(b'^ *# *include ')
 
 # This only skips the following includes, which (at the time of writing) are all false-positives:
 # git ls-files -- '*.cpp' '*.h' | xargs grep -Pn '^# *include <[a-z]+>' | sed -Ee 's,:#,: #,'
-CLASS_REGEX = re.compile(b'^ *# *include .*/([^/\\.]+)\\.h[>"]')
+CLASS_REGEX = re.compile(b'^ *# *include .*[</]([^/\\.]+)\\.h[>"]')
 
 KNOWN_STATI = {'necessary', 'class', 'unknown', 'weird', 'unmentioned', 'unnecessary'}
 # Technically we don't know anything about 'class' includes, but these would be false positives anyway.
@@ -27,10 +27,17 @@ CHECK_STATI_ORDER = ['weird', 'unmentioned', 'unknown']
 WHITELIST_INCLUDES = set()
 # This influences 'unmentioned' classification.
 ASSOCIATED_CLASSES_REGEXES = dict(
-    Assertions=['ASSERT', 'assert'],
-    StdLibExtras=['(?<![a-zA-Z0-9_:])(move|swap|)', 'EnableIf', 'Conditional', 'forward', 'Void', 'declval'],
-    Types=['FlatPtr', '(?<![a-zA-Z0-9_:])[ui](8|16|32|64)'],
-    HashFunctions=['hash_double'],
+    Assertions=[b'ASSERT', b'assert'],
+    StdLibExtras=[b'(?<![a-zA-Z0-9_:])(move|swap|)', b'EnableIf', b'Conditional', b'forward', b'Void', b'declval'],
+    Types=[b'FlatPtr', b'(?<![a-zA-Z0-9_:])[ui](8|16|32|64)'],
+    HashFunctions=[b'hash_double'],
+    Platform=[b'count_trailing_zeroes_32'],
+    time=[b'sleep'],
+    unistd=[b'pledge', b'exec', b'mount', b'dup', b'unveil'],
+    string=[b'strerror', b'strn?(cmp|cpy)'],
+    stdint=[b'int(8|16|32|64)_t'],
+    fcntl=[b'O_(CREAT|RDWR|RDONLY|EXEC)', b'S_I[RWX](USR|GRP|OTH)', b'F_DUPFD'],
+    stdio=[b'printf', b'getc', b'putc', b'scanf', b'rename'],
 )
 
 
@@ -162,6 +169,112 @@ class IncludesDatabase:
         with atomicwrites.atomic_write(self.filename, overwrite=True) as fp:
             json.dump(self.data, fp, indent=2)
 
+    def scan_single_file(self, filename):
+        with open(filename, 'rb') as fp:
+            file_contents = fp.read()
+        current_hash = hashlib.sha256(file_contents).hexdigest()
+        filedict = dict()
+        filedict['hexhash'] = current_hash
+
+        # Recalculate 'includes' list:
+        filedict['includes'] = []
+        new_by_type = Counter()
+        classname_from_filename = filename.split('/')[-1].split('.')[0].encode()
+        for i, line_content in enumerate(file_contents.split(b'\n')):
+            if not INCLUDE_REGEX.match(line_content):
+                continue
+            status = 'unknown'
+            # Is this the class header?
+            if classname_from_filename in line_content:
+                status = 'class'
+            else:
+                # Try to determine what class this is:
+                included_class = CLASS_REGEX.match(line_content)
+                if included_class is not None:
+                    # Yes, this is a class-like!
+                    # Is it mentioned anywhere in the file?
+                    included_class_re = re.escape(included_class.groups(1)[0])
+                    relevant_classes = [included_class_re] + ASSOCIATED_CLASSES_REGEXES.get(included_class, list())
+                    relevant_classes_re = b'|'.join(relevant_classes)
+                    occurrences = len(re.findall(relevant_classes_re, file_contents))
+                    if occurrences < 1:
+                        # We always match the include itself, so this cannot happen.
+                        eprint('{}:{}: "{}", but cannot find "{}"?!'.format(
+                            filename, i + 1, line_content, included_class))
+                    elif occurrences == 1:
+                        # The included class is mentioned nowhere in the file. Suspicious.
+                        status = 'unmentioned'
+                else:
+                    # This is a weird header.
+                    status = 'weird'
+            assert status in KNOWN_STATI, status
+            filedict['includes'].append(dict(
+                line_number=i, line_content=line_content.decode(), status=status, filename=filename))
+            new_by_type[status] += 1
+
+        return filedict, new_by_type
+
+    def merge_filedicts(fd_old, fd_new):
+        if fd_new['hexhash'] != fd_old['hexhash']:
+            return fd_new
+        # We rescanned it to apply new whitelisting rules. Therefore, take the "better" of the two results:
+        incs_old = fd_old['includes']
+        incs_new = fd_new['includes']
+        assert len(incs_old) == len(incs_new), (incs_old['filename'], len(incs_old), len(incs_new))
+        for i_old, i_new in zip(incs_old, incs_new):
+            #         * key 'line_number': value is a number, 0-indexed (add 1 before displaying to a human!)
+            #         * key 'status': value is any of the strings in KNOWN_STATI
+            #         * key 'filename': value is the filename (redundant, but makes things easier)
+            #         * key 'line_content': line in question (kinda redundant, but not quite)
+            assert i_old['line_number'] == i_new['line_number']
+            assert i_old['line_content'] == i_new['line_content']
+
+            # These are the requirements to the update function:
+            # N necessary
+            # C class
+            # U unknown
+            # M unmentioned
+            # W weird
+            # X unnecessary
+            # _ don't care
+
+            #     N   C   U   M   W   X   new
+            # N   N   N   N   N   N   _
+            # C   N   C   _   M   W   _
+            # U   N   _   U   M   W   _
+            # M   N   _   U   M   W   _
+            # W   N   C   U   M   W   _
+            # X   N   X   X   X   X   X
+            # old
+
+            # No change -> no-op
+            if i_old['status'] == i_new['status']:
+                continue
+            # If it is now known to be 'necessary' (either by whitelist or by experiment), trust that.
+            # Note that we can switch from 'unnecessary' to 'necessary' here.
+            if 'necessary' == i_new['status']:
+                i_old['status'] = i_new['status']
+                continue
+            # If we already know the experiment result, just keep it.
+            # Note that because we don't distinguish between "whitelisted" and
+            # "experiment says necessary", this makes it impossible to shrink the whitelist.
+            if i_old['status'] == 'unnecessary' or i_old['status'] == 'necessary':
+                continue
+            # If we get here, i_old only contains a guess. Update the guess.
+            i_old['status'] = i_new['status']
+
+            # In other words, we implemented this table:
+            #     N   C   U   M   W   X   new
+            # N   N   N   N   N   N   N
+            # C   N   C   U   M   W   X
+            # U   N   C   U   M   W   X
+            # M   N   C   U   M   W   X
+            # W   N   C   U   M   W   X
+            # X   N   X   X   X   X   X
+            # old
+
+        return incs_old
+
     def scan_files(self):
         eprint('Scanning for new files ...', end='')
         all_files = set(list_cpp_h_files(self.root))
@@ -179,51 +292,12 @@ class IncludesDatabase:
 
         # Populate self.data, actually do the scanning
         eprint('..', end='')
-        new_files, new_incs, new_by_type = 0, 0, Counter()
+        new_files, new_by_type = 0, 0, Counter()
         for filename, filedict in self.data.items():
-            current_hash = compute_file_hexhash(filename)
-            with open(filename, 'rb') as fp:
-                file_contents = fp.read()
-            current_hash = hashlib.sha256(file_contents).hexdigest()
-            if filedict['hexhash'] == current_hash:
-                continue
-            new_files += 1
-            filedict['hexhash'] = current_hash
-            # Reset and recalculate 'includes' list:
-            filedict['includes'] = []
-            classname_from_filename = filename.split('/')[-1].split('.')[0].encode()
-            for i, line_content in enumerate(file_contents.split(b'\n')):
-                if not INCLUDE_REGEX.match(line_content):
-                    continue
-                status = 'unknown'
-                # Is this the class header?
-                if classname_from_filename in line_content:
-                    status = 'class'
-                else:
-                    # Try to determine what class this includes:
-                    included_class = CLASS_REGEX.match(line_content)
-                    if included_class is not None:
-                        # Yes, this is a class-like!
-                        # Is it mentioned anywhere in the file?
-                        included_class_re = re.escape(included_class.groups(1)[0])
-                        relevant_classes = ASSOCIATED_CLASSES_REGEXES.get(included_class, list) + included_class_re
-                        relevant_classes_re = '|'.join(relevant_classes)
-                        occurrences = len(re.findall(relevant_classes_re, file_contents))
-                        if occurrences < 1:
-                            # We always match the include itself, so this cannot happen.
-                            eprint('{}:{}: "{}", but cannot find "{}"?!'.format(
-                                filename, i + 1, line_content, included_class))
-                        elif occurrences == 1:
-                            # The included class is mentioned nowhere in the file. Suspicious.
-                            status = 'unmentioned'
-                    else:
-                        # This is a weird header.
-                        status = 'weird'
-                assert status in KNOWN_STATI, status
-                filedict['includes'].append(dict(
-                    line_number=i, line_content=line_content.decode(), status=status, filename=filename))
-                new_incs += 1
-                new_by_type[status] += 1
+            filedict_new, file_new_by_type = self.scan_single_file(filename)
+            new_by_type.update(file_new_by_type)
+            # This only works because all keys are always set:
+            filedict.update(self.merge_filedicts(filedict, filedict_new))
 
         # The whitelist can only now be applied, because we want to apply it to both the items
         # from the file database, as well as what we just scanned.
@@ -240,8 +314,10 @@ class IncludesDatabase:
                 include['status'] = 'necessary'
                 changed_to_whitelist += 1
 
-        eprint('\nDiscovered {} new files (now {} in total) and {} new includes (now {} in total)'.format(
-            new_files, len(self.data), new_incs, sum(len(filedict['includes']) for filedict in self.data.values())))
+        eprint(' done')
+        eprint('Discovered {} new files (now {} in total)'.format(new_files, len(self.data)), end='')
+        total_includes = sum(len(filedict['includes']) for filedict in self.data.values())
+        eprint(' and {} new includes (now {} in total)'.format(sum(new_by_type.values()), total_includes))
         eprint('Converted {} to "necessary" by the whitelist'.format(changed_to_whitelist))
         eprint('Discovered includes by type: {}'.format(new_by_type))
         total_by_type = Counter()
@@ -312,7 +388,7 @@ class IncludesDatabase:
         if display_filename.startswith('/'):
             display_filename = display_filename[1:]
 
-        print('****** Unnecessary include found! ****** {}:{}: {} // {} ["{}", "{}"],'.format(
+        print('{}:{}: {} ****** Unnecessary include found! ****** // {} ["{}", "{}"],'.format(
             display_filename,
             complaint['line_number'] + 1,
             complaint['line_content'],
@@ -327,13 +403,13 @@ class IncludesDatabase:
 
         new_status = 'necessary' if is_necessary else 'unnecessary'
         assert 'necessary' not in recommendation['status']
+        if not is_necessary:
+            self.print_complaint(recommendation)
         recommendation['status'] = new_status
 
         # This assert is accidentally quadratic. Delete it if this gets slow.
         assert recommendation in self.data[recommendation['filename']]['includes']
 
-        if not is_necessary:
-            self.print_complaint(recommendation)
         self.save()
 
 

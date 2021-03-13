@@ -1,0 +1,114 @@
+name: Check ports
+
+on:
+  push
+
+#on:
+#  schedule:
+#    # Travis CI is the least busy around Sunday, 3am.
+#    # I can't find any numbers describing Github Actions, and I can't find any syntax to express "just run it once a week, I don't care when exactly".
+#    # Let's hope that Sunday 3am is good for Github Actions.
+#    - cron: '5 3 * * FRI'
+
+env:
+  # Don't mix these up!
+  # runner.workspace = /home/runner/work/serenity
+  # github.workspace = /home/runner/work/serenity/serenity
+  SERENITY_ROOT: ${{ github.workspace }}
+
+jobs:
+  build_serenity_and_ports:
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        # This will be a very time-consuming job, so let's build only i686 for now:
+        arch: ['i686']
+
+    steps:
+      - uses: actions/checkout@v2
+      # Set default Python to python 3.x, and set Python path such that pip install works properly
+      - uses: actions/setup-python@v2
+
+      # === OS SETUP ===
+
+      - name: "Install Ubuntu dependencies"
+        # These packages are already part of the ubuntu-20.04 image:
+        # cmake clang-format-11 gcc-10 g++-10 libstdc++-10-dev libgmp-dev npm shellcheck
+        # Packages below aren't.
+        #
+        # We add the canonical-server/server-backports PPA to get updated QEMU releases without having to manage
+        #    yet another cache in github actions
+        run: |
+          sudo add-apt-repository ppa:canonical-server/server-backports
+          sudo apt-get update
+          sudo apt-get install libmpfr-dev libmpc-dev ninja-build e2fsprogs qemu-utils qemu-system-i386 ccache unzip
+      - name: Install JS dependencies
+        run: sudo npm install -g prettier@2.4.1
+      - name: Install Python dependencies
+        # The setup-python action set default python to python3.x. Note that we are not using system python here.
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8 requests
+      - name: Check versions
+        run: set +e; g++ --version; g++-10 --version; clang-format --version; clang-format-11 --version; prettier --version; python --version; python3 --version; ninja --version; flake8 --version; ccache --version; qemu-system-i386 --version
+
+      # === BUILD TOOLCHAIN AND SERENITY ===
+
+      - name: Build the Toolchain
+        # On average (looking at 2021-07 through 2021-12), we have 10.1 commits to LibC and 1.3 commits to Toolchain per week.
+        # In all other CI jobs, we would detect these changes and invalidate the Toolchain cache.
+        # Because this job runs only once a week, it therefore does not make sense to cache anything.
+        # Keep in mind that Github will delete "old" caches, going by size.
+        run: ARCH="${{ matrix.arch }}" ${{ github.workspace }}/Toolchain/BuildIt.sh
+      - name: Create build directory
+        run: |
+          mkdir -p ${{ github.workspace }}/Build/${{ matrix.arch }}/UCD
+          mkdir -p ${{ github.workspace }}/Build/${{ matrix.arch }}/CLDR
+      - name: UnicodeData cache
+        # TODO: Change the version to the released version when https://github.com/actions/cache/pull/489 (or 571) is merged.
+        uses: actions/cache@03e00da99d75a2204924908e1cca7902cafce66b
+        with:
+          path: ${{ github.workspace }}/Build/${{ matrix.arch }}/UCD
+          key: UnicodeData-${{ hashFiles('Meta/CMake/unicode_data.cmake') }}
+      - name: UnicodeLocale Cache
+        # TODO: Change the version to the released version when https://github.com/actions/cache/pull/489 (or 571) is merged.
+        uses: actions/cache@03e00da99d75a2204924908e1cca7902cafce66b
+        with:
+          path: ${{ github.workspace }}/Build/${{ matrix.arch }}/CLDR
+          key: UnicodeLocale-${{ hashFiles('Meta/CMake/unicode_data.cmake') }}
+      - name: Create build environment
+        working-directory: ${{ github.workspace }}
+        run:  |
+          cmake -S Meta/CMake/Superbuild -B Build/superbuild -GNinja \
+            -DENABLE_COMPILETIME_HEADER_CHECK=OFF \
+            -DSERENITY_ARCH=${{ matrix.arch }} \
+            -DSERENITY_TOOLCHAIN=GNU \
+            -DCMAKE_C_COMPILER=gcc-10 \
+            -DCMAKE_CXX_COMPILER=g++-10 \
+            -DENABLE_UNDEFINED_SANITIZER=ON \
+            -DENABLE_PCI_IDS_DOWNLOAD=OFF \
+            -DENABLE_USB_IDS_DOWNLOAD=OFF
+      - name: Build Serenity and Tests
+        working-directory: ${{ github.workspace }}/Build/superbuild
+        run: cmake --build .
+
+      # === BUILD ALL PORTS ===
+
+      - name: Build all ports
+        id: main_build
+        working-directory: ${{ github.workspace }}/Ports
+        run: ./build_all.sh ci-output verbose randomize || true
+
+      # === NOTIFICATIONS ===
+
+      - name: Dump event info
+        if: always()
+        run: |
+          cat <<"EOF"
+          ${{ toJSON(github.event) }}
+          ${{ toJSON(needs) }}
+          EOF
+      # FIXME: Having a discord notification with a summary of the failed ports would be really nice.
+      #- name: Generate Discord message
+      #  if: github.repository == 'SerenityOS/serenity'
+      #  run: FIXME

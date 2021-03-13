@@ -1,33 +1,35 @@
 #!/usr/bin/env bash
 
+set -e
+
 clean=false
 verbose=false
+all_files=$(ls)
 
-case "$1" in
-    clean)
-        clean=true
-        ;;
-    verbose)
-        verbose=true
-        ;;
-    *)
-        ;;
-esac
-
-case "$2" in
-    clean)
-        clean=true
-        ;;
-    verbose)
-        verbose=true
-        ;;
-    *)
-        ;;
-esac
+for arg in "$@" ; do
+    case "$arg" in
+        clean)
+            clean=true
+            ;;
+        verbose)
+            verbose=true
+            ;;
+        *)
+            ;;
+        randomize)
+            # shellcheck disable=SC2012
+            all_files=$(ls | shuf)
+            ;;
+        *)
+            echo "USAGE: $0 {clean | randomize}*"
+            exit 1
+            ;;
+    esac
+done
 
 some_failed=false
 
-for file in *; do
+for file in $all_files; do
     if [ -d $file ]; then
         pushd $file > /dev/null
             dirname=$(basename $file)

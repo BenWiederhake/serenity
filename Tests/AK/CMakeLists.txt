@@ -1,4 +1,5 @@
 set(AK_TEST_SOURCES
+    BenchmarkSorts.cpp
     TestAllOf.cpp
     TestAnyOf.cpp
     TestArray.cpp
@@ -25,6 +26,7 @@ set(AK_TEST_SOURCES
     TestHashFunctions.cpp
     TestHashMap.cpp
     TestHashTable.cpp
+    TestHeapSort.cpp
     TestHex.cpp
     TestIPv4Address.cpp
     TestIndexSequence.cpp

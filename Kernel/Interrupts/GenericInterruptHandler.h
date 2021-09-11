@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <AK/Atomic.h>
 #include <AK/IntrusiveList.h>
 #include <AK/Types.h>
 #include <Kernel/Arch/x86/RegisterState.h>

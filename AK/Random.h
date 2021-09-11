@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include <AK/Platform.h>
 #include <AK/Types.h>
 
 #if defined(__serenity__)

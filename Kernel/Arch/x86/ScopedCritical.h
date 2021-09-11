@@ -6,8 +6,6 @@
 
 #pragma once
 
-#include <AK/Types.h>
-
 #include <Kernel/Arch/x86/Processor.h>
 
 namespace Kernel {

@@ -9,7 +9,6 @@
 #include <AK/BitmapView.h>
 #include <AK/Noncopyable.h>
 #include <AK/Optional.h>
-#include <AK/Platform.h>
 #include <AK/StdLibExtras.h>
 #include <AK/Types.h>
 #include <AK/kmalloc.h>

@@ -15,7 +15,6 @@
 #include <Kernel/IO.h>
 #include <Kernel/Memory/TypedMapping.h>
 #include <Kernel/Sections.h>
-#include <Kernel/StdLib.h>
 
 namespace Kernel::ACPI {
 

@@ -7,7 +7,6 @@
 #include <AK/StringView.h>
 #include <Kernel/Devices/Device.h>
 #include <Kernel/FileSystem/DevTmpFS.h>
-#include <Kernel/FileSystem/VirtualFileSystem.h>
 
 namespace Kernel {
 

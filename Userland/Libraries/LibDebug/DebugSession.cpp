@@ -9,11 +9,9 @@
 #include <AK/JsonValue.h>
 #include <AK/LexicalPath.h>
 #include <AK/Optional.h>
-#include <AK/Platform.h>
 #include <LibCore/File.h>
 #include <LibRegex/Regex.h>
 #include <stdlib.h>
-#include <sys/mman.h>
 
 namespace Debug {
 

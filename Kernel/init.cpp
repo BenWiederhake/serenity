@@ -6,12 +6,10 @@
 
 #include <AK/Types.h>
 #include <Kernel/ACPI/Initialize.h>
-#include <Kernel/ACPI/MultiProcessorParser.h>
 #include <Kernel/ACPI/Parser.h>
 #include <Kernel/Arch/PC/BIOS.h>
 #include <Kernel/Arch/x86/Processor.h>
 #include <Kernel/BootInfo.h>
-#include <Kernel/Bus/PCI/Access.h>
 #include <Kernel/Bus/PCI/Initializer.h>
 #include <Kernel/Bus/USB/USBManagement.h>
 #include <Kernel/Bus/VirtIO/Device.h>
@@ -28,7 +26,6 @@
 #include <Kernel/Devices/SerialDevice.h>
 #include <Kernel/Devices/VMWareBackdoor.h>
 #include <Kernel/Devices/ZeroDevice.h>
-#include <Kernel/FileSystem/Ext2FileSystem.h>
 #include <Kernel/FileSystem/SysFS.h>
 #include <Kernel/FileSystem/VirtualFileSystem.h>
 #include <Kernel/Graphics/GraphicsManagement.h>
@@ -46,7 +43,6 @@
 #include <Kernel/Prekernel/Prekernel.h>
 #include <Kernel/Process.h>
 #include <Kernel/ProcessExposed.h>
-#include <Kernel/RTC.h>
 #include <Kernel/Random.h>
 #include <Kernel/Scheduler.h>
 #include <Kernel/Sections.h>

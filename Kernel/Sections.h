@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include <AK/Platform.h>
 #ifdef __cplusplus
 #    include <AK/Types.h>
 #    include <Kernel/BootInfo.h>

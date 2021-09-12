@@ -4,10 +4,8 @@
  * SPDX-License-Identifier: BSD-2-Clause
  */
 
-#include <AK/StringView.h>
 #include <Kernel/ACPI/Parser.h>
 #include <Kernel/Debug.h>
-#include <Kernel/Interrupts/InterruptManagement.h>
 #include <Kernel/Memory/MemoryManager.h>
 #include <Kernel/Memory/TypedMapping.h>
 #include <Kernel/Sections.h>

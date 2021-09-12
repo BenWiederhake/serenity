@@ -6,8 +6,6 @@
 
 #pragma once
 
-#include <AK/MACAddress.h>
-#include <Kernel/Net/IPv4.h>
 
 struct ICMPType {
     enum {

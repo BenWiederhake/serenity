@@ -9,7 +9,6 @@
 #include <AK/Utf8View.h>
 #include <LibJS/Runtime/Error.h>
 #include <LibJS/Runtime/FunctionObject.h>
-#include <LibJS/Runtime/Shape.h>
 #include <LibTextCodec/Decoder.h>
 #include <LibWeb/Bindings/CSSStyleDeclarationWrapper.h>
 #include <LibWeb/Bindings/DocumentWrapper.h>

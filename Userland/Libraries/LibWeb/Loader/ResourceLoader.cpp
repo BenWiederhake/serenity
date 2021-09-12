@@ -6,7 +6,6 @@
 
 #include <AK/Base64.h>
 #include <AK/Debug.h>
-#include <AK/JsonObject.h>
 #include <LibCore/EventLoop.h>
 #include <LibCore/File.h>
 #include <LibProtocol/Request.h>

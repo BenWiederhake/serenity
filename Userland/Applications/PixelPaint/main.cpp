@@ -8,7 +8,6 @@
 #include "MainWidget.h"
 #include <LibCore/ArgsParser.h>
 #include <LibCore/File.h>
-#include <LibFileSystemAccessClient/Client.h>
 #include <LibGUI/Action.h>
 #include <LibGUI/Application.h>
 #include <LibGUI/Icon.h>

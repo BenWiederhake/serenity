@@ -6,7 +6,6 @@
  * SPDX-License-Identifier: BSD-2-Clause
  */
 
-#include <AK/Platform.h>
 #include <LibTest/CrashTest.h>
 #include <sys/wait.h>
 #include <unistd.h>

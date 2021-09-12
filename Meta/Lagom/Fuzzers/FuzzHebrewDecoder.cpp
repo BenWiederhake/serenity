@@ -4,8 +4,6 @@
  * SPDX-License-Identifier: BSD-2-Clause
  */
 
-#include <AK/String.h>
-#include <LibTextCodec/Decoder.h>
 #include <stddef.h>
 #include <stdint.h>
 

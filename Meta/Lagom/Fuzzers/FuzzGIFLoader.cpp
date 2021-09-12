@@ -6,7 +6,6 @@
 
 #include <AK/Debug.h>
 #include <AK/Format.h>
-#include <AK/String.h>
 #include <LibGfx/GIFLoader.h>
 #include <stddef.h>
 #include <stdint.h>

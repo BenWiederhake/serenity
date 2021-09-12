@@ -6,7 +6,6 @@
 
 #include <AK/Singleton.h>
 #include <AK/StdLibExtras.h>
-#include <AK/StringBuilder.h>
 #include <AK/Time.h>
 #include <AK/Types.h>
 #include <Kernel/API/Syscall.h>
@@ -22,20 +21,15 @@
 #include <Kernel/FileSystem/VirtualFileSystem.h>
 #include <Kernel/KBufferBuilder.h>
 #include <Kernel/KSyms.h>
-#include <Kernel/Memory/AnonymousVMObject.h>
-#include <Kernel/Memory/PageDirectory.h>
-#include <Kernel/Memory/SharedInodeVMObject.h>
 #include <Kernel/Module.h>
 #include <Kernel/PerformanceEventBuffer.h>
 #include <Kernel/PerformanceManager.h>
 #include <Kernel/Process.h>
-#include <Kernel/ProcessExposed.h>
 #include <Kernel/Sections.h>
 #include <Kernel/StdLib.h>
 #include <Kernel/TTY/TTY.h>
 #include <Kernel/Thread.h>
 #include <Kernel/ThreadTracer.h>
-#include <LibC/errno_numbers.h>
 #include <LibC/limits.h>
 
 namespace Kernel {

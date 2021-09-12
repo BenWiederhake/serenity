@@ -8,7 +8,6 @@
 
 #include <AK/Result.h>
 #include <AK/String.h>
-#include <AK/Types.h>
 #include <AK/Vector.h>
 #include <pwd.h>
 #ifndef AK_OS_BSD_GENERIC

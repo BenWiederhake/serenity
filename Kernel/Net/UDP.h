@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include <Kernel/Net/IPv4.h>
 
 namespace Kernel {
 

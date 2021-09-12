@@ -5,13 +5,10 @@
  */
 
 #include <AK/Debug.h>
-#include <AK/StringBuilder.h>
 #include <LibJS/Parser.h>
-#include <LibTextCodec/Decoder.h>
 #include <LibWeb/DOM/Document.h>
 #include <LibWeb/DOM/Event.h>
 #include <LibWeb/DOM/ShadowRoot.h>
-#include <LibWeb/DOM/Text.h>
 #include <LibWeb/DOM/Window.h>
 #include <LibWeb/HTML/EventNames.h>
 #include <LibWeb/HTML/HTMLScriptElement.h>

@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include <LibGfx/Size.h>
 
 namespace Web::Layout {
 

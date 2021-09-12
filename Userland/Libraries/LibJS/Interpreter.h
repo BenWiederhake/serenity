@@ -6,19 +6,13 @@
 
 #pragma once
 
-#include <AK/FlyString.h>
-#include <AK/HashMap.h>
-#include <AK/String.h>
 #include <AK/Vector.h>
 #include <AK/Weakable.h>
 #include <LibJS/AST.h>
 #include <LibJS/Forward.h>
 #include <LibJS/Heap/DeferGC.h>
 #include <LibJS/Heap/Heap.h>
-#include <LibJS/Runtime/DeclarativeEnvironment.h>
-#include <LibJS/Runtime/ErrorTypes.h>
 #include <LibJS/Runtime/Exception.h>
-#include <LibJS/Runtime/MarkedValueList.h>
 #include <LibJS/Runtime/VM.h>
 #include <LibJS/Runtime/Value.h>
 

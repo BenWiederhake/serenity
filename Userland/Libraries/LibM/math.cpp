@@ -7,7 +7,6 @@
 
 #include <AK/ExtraMathConstants.h>
 #include <AK/Math.h>
-#include <AK/Platform.h>
 #include <AK/StdLibExtras.h>
 #include <LibC/assert.h>
 #include <fenv.h>

@@ -11,7 +11,6 @@
 #include <AK/RefCounted.h>
 #include <AK/RefPtr.h>
 #include <LibWeb/Bindings/WindowObject.h>
-#include <LibWeb/Bindings/Wrappable.h>
 #include <LibWeb/CSS/Screen.h>
 #include <LibWeb/DOM/Event.h>
 #include <LibWeb/DOM/EventTarget.h>

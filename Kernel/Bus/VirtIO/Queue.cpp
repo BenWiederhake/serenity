@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: BSD-2-Clause
  */
 
-#include <AK/Atomic.h>
 #include <Kernel/Bus/VirtIO/Queue.h>
 #include <Kernel/Memory/MemoryManager.h>
 #include <Kernel/StdLib.h>

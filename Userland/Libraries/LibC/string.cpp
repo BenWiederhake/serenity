@@ -6,7 +6,6 @@
 
 #include <AK/Format.h>
 #include <AK/MemMem.h>
-#include <AK/Platform.h>
 #include <AK/StdLibExtras.h>
 #include <AK/Types.h>
 #include <assert.h>

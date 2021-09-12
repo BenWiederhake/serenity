@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include <AK/ByteBuffer.h>
 #include <AK/MemoryStream.h>
 #include <AK/String.h>
 #include <AK/Types.h>

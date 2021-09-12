@@ -15,7 +15,6 @@
 #include <LibGUI/Icon.h>
 #include <LibGUI/ItemListModel.h>
 #include <LibGUI/Menu.h>
-#include <LibGUI/Menubar.h>
 #include <LibGUI/Window.h>
 #include <unistd.h>
 

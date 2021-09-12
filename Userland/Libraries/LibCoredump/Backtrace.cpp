@@ -6,7 +6,6 @@
 
 #include <AK/LexicalPath.h>
 #include <AK/MappedFile.h>
-#include <AK/Platform.h>
 #include <AK/StringBuilder.h>
 #include <AK/Types.h>
 #include <LibCore/File.h>

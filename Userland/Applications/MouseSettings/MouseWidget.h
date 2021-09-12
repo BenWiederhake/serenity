@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include <LibGUI/Window.h>
 
 #include "DoubleClickArrowWidget.h"
 

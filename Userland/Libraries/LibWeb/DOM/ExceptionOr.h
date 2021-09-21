@@ -106,7 +106,7 @@ public:
 
     bool is_exception() const
     {
-        return !m_exception.template has<Empty>();
+        return m_exception;
     }
 
 private:

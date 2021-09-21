@@ -655,7 +655,7 @@ static void generate_object_binding_pattern_bytecode(Bytecode::Generator& genera
     for (auto& [name, alias, initializer, is_rest] : pattern.entries) {
         if (is_rest) {
             VERIFY(name.has<NonnullRefPtr<Identifier>>());
-            VERIFY(alias.has<Empty>());
+            VERIFY(!alias);
             VERIFY(!initializer);
 
             auto identifier = name.get<NonnullRefPtr<Identifier>>()->string();
@@ -717,7 +717,7 @@ static void generate_object_binding_pattern_bytecode(Bytecode::Generator& genera
             auto nested_value_reg = generator.allocate_register();
             generator.emit<Bytecode::Op::Store>(nested_value_reg);
             generate_binding_pattern_bytecode(generator, binding_pattern, nested_value_reg);
-        } else if (alias.has<Empty>()) {
+        } else if (!alias) {
             if (name.has<NonnullRefPtr<Expression>>()) {
                 // This needs some sort of SetVariableByValue opcode, as it's a runtime binding
                 TODO();
@@ -782,7 +782,7 @@ static void generate_array_binding_pattern_bytecode(Bytecode::Generator& generat
     };
 
     for (auto& [name, alias, initializer, is_rest] : pattern.entries) {
-        VERIFY(name.has<Empty>());
+        VERIFY(!name);
 
         if (is_rest) {
             if (first) {

@@ -408,7 +408,7 @@ Optional<InstantiationError> AbstractMachine::allocate_all_initial_phase(Module 
                         dbgln("Failed to export '{}', the exported address ({}) was out of bounds (min: 0, max: {})", entry.name(), index.value(), module_instance.globals().size());
                 });
 
-            if (address.has<Empty>()) {
+            if (!address) {
                 result = InstantiationError { "An export could not be resolved" };
                 continue;
             }

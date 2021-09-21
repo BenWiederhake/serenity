@@ -119,7 +119,7 @@ public:
 
     inline void initialize(HashKind kind)
     {
-        if (!m_algorithm.has<Empty>()) {
+        if (m_algorithm) {
             VERIFY_NOT_REACHED();
         }
 

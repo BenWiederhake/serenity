@@ -39,7 +39,7 @@ public:
     void set_detach_key(Value detach_key) { m_detach_key = detach_key; }
 
     void detach_buffer() { m_buffer = Empty {}; }
-    bool is_detached() const { return m_buffer.has<Empty>(); }
+    bool is_detached() const { return !m_buffer; }
 
     enum Order {
         SeqCst,

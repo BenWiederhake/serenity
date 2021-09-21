@@ -58,7 +58,7 @@ Document::Document(NonnullRefPtr<Parser> const& parser)
 Value Document::get_or_load_value(u32 index)
 {
     auto value = get_value(index);
-    if (!value.has<Empty>()) // FIXME: Use Optional instead?
+    if (value)
         return value;
 
     auto object = m_parser->parse_object_with_index(index);

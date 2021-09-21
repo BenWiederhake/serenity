@@ -2263,7 +2263,7 @@ NonnullRefPtr<VariableDeclaration> Parser::parse_variable_declaration(bool for_l
                 consume().value());
         }
 
-        if (target.has<Empty>()) {
+        if (!target) {
             expected("identifier or a binding pattern");
             if (match(TokenType::Comma)) {
                 consume();

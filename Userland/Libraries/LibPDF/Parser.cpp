@@ -154,7 +154,7 @@ Parser::LinearizationResult Parser::initialize_linearization_dict()
         || !first_page_object_number.has_u32()
         || !number_of_pages.has_u16()
         || !offset_of_main_xref_table.has_u32()
-        || (!first_page.has<Empty>() && !first_page.has_u32())) {
+        || (first_page && !first_page.has_u32())) {
         return LinearizationResult::Error;
     }
 
@@ -179,8 +179,8 @@ Parser::LinearizationResult Parser::initialize_linearization_dict()
 
     if (!primary_hint_stream_offset.has_u32()
         || !primary_hint_stream_length.has_u32()
-        || (!overflow_hint_stream_offset.has<Empty>() && !overflow_hint_stream_offset.has_u32())
-        || (!overflow_hint_stream_length.has<Empty>() && !overflow_hint_stream_length.has_u32())) {
+        || (overflow_hint_stream_offset && !overflow_hint_stream_offset.has_u32())
+        || (overflow_hint_stream_length && !overflow_hint_stream_length.has_u32())) {
         return LinearizationResult::Error;
     }
 
@@ -188,13 +188,13 @@ Parser::LinearizationResult Parser::initialize_linearization_dict()
         length_of_file.get_u32(),
         primary_hint_stream_offset.get_u32(),
         primary_hint_stream_length.get_u32(),
-        overflow_hint_stream_offset.has<Empty>() ? NumericLimits<u32>::max() : overflow_hint_stream_offset.get_u32(),
-        overflow_hint_stream_length.has<Empty>() ? NumericLimits<u32>::max() : overflow_hint_stream_length.get_u32(),
+        overflow_hint_stream_offset ? overflow_hint_stream_offset.get_u32() : NumericLimits<u32>::max(),
+        overflow_hint_stream_length ? overflow_hint_stream_length.get_u32() : NumericLimits<u32>::max(),
         first_page_object_number.get_u32(),
         offset_of_first_page_end.get_u32(),
         number_of_pages.get_u16(),
         offset_of_main_xref_table.get_u32(),
-        first_page.has<Empty>() ? NumericLimits<u32>::max() : first_page.get_u32(),
+        first_page ? first_page.get_u32() : NumericLimits<u32>::max(),
     };
 
     return LinearizationResult::Linearized;
@@ -928,7 +928,7 @@ RefPtr<ArrayObject> Parser::parse_array()
 
     while (!m_reader.matches(']')) {
         auto value = parse_value();
-        if (value.has<Empty>())
+        if (!value)
             return {};
         values.append(value);
     }
@@ -954,7 +954,7 @@ RefPtr<DictObject> Parser::parse_dict()
         if (!name)
             return {};
         auto value = parse_value();
-        if (value.has<Empty>())
+        if (!value)
             return {};
         map.set(name->name(), value);
     }
@@ -1004,7 +1004,7 @@ RefPtr<DictObject> Parser::conditionally_parse_page_tree_node(u32 object_index, 
             return {};
         }
         auto value = parse_value();
-        if (value.has<Empty>()) {
+        if (!value) {
             ok = false;
             return {};
         }

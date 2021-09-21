@@ -322,7 +322,7 @@ struct BindingPattern : RefCounted<BindingPattern> {
         RefPtr<Expression> initializer {};
         bool is_rest { false };
 
-        bool is_elision() const { return name.has<Empty>() && alias.has<Empty>(); }
+        bool is_elision() const { return !name && !alias; }
     };
 
     enum class Kind {

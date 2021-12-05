@@ -17,6 +17,7 @@ struct GenericTraits {
     using PeekType = T;
     using ConstPeekType = T;
     static constexpr bool is_trivial() { return false; }
+    static constexpr bool is_heavy() { return false; }
     static constexpr bool equals(const T& a, const T& b) { return a == b; }
 };
 

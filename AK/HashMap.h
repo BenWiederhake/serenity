@@ -110,7 +110,7 @@ public:
         return it->value;
     }
 
-    Optional<typename Traits<V>::PeekType> get(const K& key) const requires(!IsPointer<typename Traits<V>::PeekType>)
+    Optional<typename Traits<V>::PeekType> get(const K& key) const requires(!IsPointer<typename Traits<V>::PeekType> && !Traits<V>::is_heavy())
     {
         auto it = find(key);
         if (it == end())
@@ -118,7 +118,7 @@ public:
         return (*it).value;
     }
 
-    Optional<typename Traits<V>::ConstPeekType> get(const K& key) const requires(IsPointer<typename Traits<V>::PeekType>)
+    Optional<typename Traits<V>::ConstPeekType> get(const K& key) const requires(IsPointer<typename Traits<V>::PeekType> && !Traits<V>::is_heavy())
     {
         auto it = find(key);
         if (it == end())
@@ -126,7 +126,7 @@ public:
         return (*it).value;
     }
 
-    Optional<typename Traits<V>::PeekType> get(const K& key) requires(!IsConst<typename Traits<V>::PeekType>)
+    Optional<typename Traits<V>::PeekType> get(const K& key) requires(!IsConst<typename Traits<V>::PeekType> && !Traits<V>::is_heavy())
     {
         auto it = find(key);
         if (it == end())
@@ -186,6 +186,11 @@ public:
 
 private:
     HashTableType m_table;
+};
+
+template<typename K, typename V, typename KeyTraits, bool IsOrdered>
+struct Traits<HashMap<K, V, KeyTraits, IsOrdered>> : public GenericTraits<HashMap<K, V, KeyTraits, IsOrdered>> {
+    static constexpr bool is_heavy() { return true; }
 };
 
 }

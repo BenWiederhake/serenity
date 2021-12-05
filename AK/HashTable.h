@@ -496,6 +496,12 @@ private:
     size_t m_capacity { 0 };
     size_t m_deleted_count { 0 };
 };
+
+template<typename T, typename TraitsForT, bool IsOrdered>
+struct Traits<HashTable<T, TraitsForT, IsOrdered>> : public GenericTraits<HashTable<T, TraitsForT, IsOrdered>> {
+    static constexpr bool is_heavy() { return true; }
+};
+
 }
 
 using AK::HashTable;

@@ -762,6 +762,11 @@ private:
 template<class... Args>
 Vector(Args... args) -> Vector<CommonType<Args...>>;
 
+template<typename T>
+struct Traits<Vector<T>> : public GenericTraits<Vector<T>> {
+    static constexpr bool is_heavy() { return true; }
+};
+
 }
 
 using AK::Vector;

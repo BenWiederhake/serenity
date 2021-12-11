@@ -7,7 +7,7 @@ list(APPEND REQUIRED_TARGETS
     touch tr true umount uname uniq uptime w wc which whoami xargs yes less
 )
 list(APPEND RECOMMENDED_TARGETS
-    adjtime aplay abench asctl bt checksum chres cksum copy fortune gunzip gzip init keymap lsirq lsof lspci man mknod mktemp
+    adjtime aplay abench asctl bt checksum chres cksum copy fortune gunzip gzip init iotrace keymap lsirq lsof lspci man mknod mktemp
     modload modunload nc netstat notify ntpquery open pape passwd pls printf pro shot tar tt unzip zip
 )
 

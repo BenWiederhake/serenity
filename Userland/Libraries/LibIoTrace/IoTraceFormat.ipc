@@ -1,0 +1,6 @@
+// This is not a format for inter-process communication, but rather an abuse of the encoder/decoder functionality of LibIPC.
+
+endpoint IoTraceFormat
+{
+    syscall_write(u32 pid, u32 fd, ByteBuffer buffer) =|
+}

@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: BSD-2-Clause
  */
 
+#define NO_AK_VECTOR_TRAITS
+
 #include "GeneratorUtil.h"
 #include <AK/AllOf.h>
 #include <AK/Array.h>

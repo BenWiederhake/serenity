@@ -294,4 +294,11 @@ private:
 };
 
 }
+
+//template<size_t inline_capacity>
+//struct Traits<Detail::ByteBuffer<inline_capacity>> : public GenericTraits<Detail::ByteBuffer<inline_capacity>> {
+//    using PeekType = Void<>;
+//    using ConstPeekType = Void<>;
+//};
+
 }

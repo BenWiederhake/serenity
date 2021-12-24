@@ -135,6 +135,10 @@ public:
 
     [[nodiscard]] ALWAYS_INLINE bool has_value() const { return m_has_value; }
 
+    // If you're here due to the compiler error "forming reference to void",
+    // then you called HashMap<K, V>::get() where V is a "heavy" type.
+    // Note that HashMap::get copies implicitly, which is probably not intentional.
+    // Instead, use HashMap::find (and possibly dereference, if copying is intentional).
     [[nodiscard]] ALWAYS_INLINE T& value() &
     {
         VERIFY(m_has_value);

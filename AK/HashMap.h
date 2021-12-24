@@ -229,6 +229,14 @@ private:
     HashTableType m_table;
 };
 
+#ifndef NO_AK_HASHMAP_TRAITS
+template<typename K, typename V, typename KeyTraits, bool IsOrdered>
+struct Traits<HashMap<K, V, KeyTraits, IsOrdered>> : public GenericTraits<HashMap<K, V, KeyTraits, IsOrdered>> {
+    using PeekType = Void<V>;
+    using ConstPeekType = Void<V>;
+};
+#endif
+
 }
 
 using AK::HashMap;

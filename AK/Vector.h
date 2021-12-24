@@ -762,6 +762,14 @@ private:
 template<class... Args>
 Vector(Args... args) -> Vector<CommonType<Args...>>;
 
+#ifndef NO_AK_VECTOR_TRAITS
+template<typename T>
+struct Traits<Vector<T>> : public GenericTraits<Vector<T>> {
+    using PeekType = Void<T>;
+    using ConstPeekType = Void<T>;
+};
+#endif
+
 }
 
 using AK::Vector;

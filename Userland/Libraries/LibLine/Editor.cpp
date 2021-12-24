@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: BSD-2-Clause
  */
 
+#define NO_AK_HASHMAP_TRAITS
+
 #include "Editor.h"
 #include <AK/CharacterTypes.h>
 #include <AK/Debug.h>

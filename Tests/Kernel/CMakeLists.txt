@@ -13,6 +13,7 @@ set(TEST_SOURCES
     null-deref-crash-during-pthread_join.cpp
     path-resolution-race.cpp
     pthread-cond-timedwait-example.cpp
+    setuid-race.cpp
     setpgid-across-sessions-without-leader.cpp
     siginfo-example.cpp
     stress-truncate.cpp

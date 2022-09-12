@@ -274,6 +274,9 @@ u32 Utf8CodePointIterator::operator*() const
         code_point_value_so_far |= m_ptr[offset] & 63;
     }
 
+    if (code_point_value_so_far > 0x10FFFF) {
+        return 0xFFFD;
+    }
     return code_point_value_so_far;
 }
 

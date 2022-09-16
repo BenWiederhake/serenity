@@ -15,6 +15,7 @@ class EventLoopPlugin {
 public:
     static EventLoopPlugin& the();
     static void install(EventLoopPlugin&);
+    static void uninstall(EventLoopPlugin&);
 
     virtual ~EventLoopPlugin();
 

@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: BSD-2-Clause
  */
 
+#include <AK/Format.h>
 #include <AK/Function.h>
 #include <LibWeb/Platform/EventLoopPlugin.h>
 
@@ -21,6 +22,12 @@ void EventLoopPlugin::install(EventLoopPlugin& plugin)
 {
     VERIFY(!s_the);
     s_the = &plugin;
+}
+
+void EventLoopPlugin::uninstall(EventLoopPlugin& plugin)
+{
+    VERIFY(s_the == &plugin);
+    s_the = nullptr;
 }
 
 EventLoopPlugin::~EventLoopPlugin() = default;

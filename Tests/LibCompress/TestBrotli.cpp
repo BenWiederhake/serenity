@@ -80,6 +80,17 @@ TEST_CASE(brotli_single_z)
     run_test("single-z.txt"sv);
 }
 
+TEST_CASE(brotli_alice29_txt) { run_test("alice29.txt"sv); }
+TEST_CASE(brotli_asyoulik_txt) { run_test("asyoulik.txt"sv); }
+TEST_CASE(brotli_compressed_file) { run_test("compressed_file"sv); }
+TEST_CASE(brotli_compressed_repeated) { run_test("compressed_repeated"sv); }
+TEST_CASE(brotli_empty18) { run_test("empty18"sv); }
+TEST_CASE(brotli_lcet10_txt) { run_test("lcet10.txt"sv); }
+TEST_CASE(brotli_mapsdatazrh) { run_test("mapsdatazrh"sv); }
+TEST_CASE(brotli_plrabn12_txt) { run_test("plrabn12.txt"sv); }
+TEST_CASE(brotli_quickfox_repeated) { run_test("quickfox_repeated"sv); }
+TEST_CASE(brotli_zeros) { run_test("zeros"sv); }
+
 TEST_CASE(brotli_decompress_zero_one_bin)
 {
     // This makes sure that the tests will run both on target and in Lagom.

@@ -4,6 +4,7 @@ import os
 import re
 import sys
 import subprocess
+import time
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 
@@ -66,6 +67,8 @@ def read_port_dirs():
         list: all ports (set), no errors encountered (bool)
     """
 
+    last_time = time.time_ns()
+
     ports = {}
     all_good = True
     for entry in os.listdir():
@@ -80,6 +83,9 @@ def read_port_dirs():
             all_good = False
             continue
         ports[entry] = get_port_properties(entry)
+        new_time = time.time_ns()
+        print(f'    {new_time - last_time} read_port_dirs -> {entry}')
+        last_time = new_time
 
     return ports, all_good
 
@@ -94,14 +100,13 @@ def get_port_properties(port):
         dict: keys are values from PORT_PROPERTIES, values are from the package.sh file
     """
 
-    package_sh_command = f"./package.sh showproperty {' '.join(PORT_PROPERTIES)}"
-    res = subprocess.run(f"cd {port}; exec {package_sh_command}", shell=True, capture_output=True)
+    res = subprocess.run(['./package.sh', 'showproperty', *PORT_PROPERTIES], cwd=port, capture_output=True)
     if res.returncode == 0:
         results = res.stdout.decode('utf-8').split('\n\n')
         props = {prop: results[i].strip() for i, prop in enumerate(PORT_PROPERTIES)}
     else:
         print((
-            f'Executing "{package_sh_command}" script for port {port} failed with '
+            f'Executing package.sh script for port {port} failed with '
             f'exit code {res.returncode}, output from stderr:\n{res.stderr.decode("utf-8").strip()}'
         ))
         props = {x: '' for x in PORT_PROPERTIES}
@@ -341,44 +346,79 @@ def check_available_ports(from_table, ports):
 def run():
     """Check Ports directory and package files for errors."""
 
+    last_time = time.time_ns()
+
     from_table = read_port_table(PORT_TABLE_FILE)
+    new_time = time.time_ns()
+    print(f'read_port_table took {new_time - last_time} ns')
+    last_time = new_time
     ports, all_good = read_port_dirs()
+    new_time = time.time_ns()
+    print(f'read_port_dirs took {new_time - last_time} ns')
+    last_time = new_time
 
     from_table_set = set(from_table.keys())
     ports_set = set(ports.keys())
+    new_time = time.time_ns()
+    print(f'conversion to sets took {new_time - last_time} ns')
+    last_time = new_time
 
     if list(from_table.keys()) != sorted(from_table.keys(), key=str.lower):
         all_good = False
         print('AvailablePorts.md is not in the correct order, please ensure that all ports are sorted as follows:')
         for port in sorted(from_table.keys(), key=str.lower):
             print(f"    {port}")
+    new_time = time.time_ns()
+    print(f'order check to sets took {new_time - last_time} ns')
+    last_time = new_time
 
     if from_table_set - ports_set:
         all_good = False
         print('AvailablePorts.md lists ports that do not appear in the file system:')
         for port in sorted(from_table_set - ports_set):
             print(f"    {port}")
+    new_time = time.time_ns()
+    print(f'superfluous port check took {new_time - last_time} ns')
+    last_time = new_time
 
     if ports_set - from_table_set:
         all_good = False
         print('AvailablePorts.md is missing the following ports:')
         for port in sorted(ports_set - from_table_set):
             print(f"    {port}")
+    new_time = time.time_ns()
+    print(f'missing port check took {new_time - last_time} ns')
+    last_time = new_time
 
     if not check_package_files(ports):
         all_good = False
+    new_time = time.time_ns()
+    print(f'package file check took {new_time - last_time} ns')
+    last_time = new_time
 
     if not check_available_ports(from_table, ports):
         all_good = False
+    new_time = time.time_ns()
+    print(f'available port check took {new_time - last_time} ns')
+    last_time = new_time
 
     patch_list_good, port_properties = get_and_check_port_patch_list(ports.keys())
     all_good = all_good and patch_list_good
+    new_time = time.time_ns()
+    print(f'get_and_check_port_patch_list took {new_time - last_time} ns')
+    last_time = new_time
 
     if not check_descriptions_for_port_patches(port_properties):
         all_good = False
+    new_time = time.time_ns()
+    print(f'check_descriptions_for_port_patches took {new_time - last_time} ns')
+    last_time = new_time
 
     if REQUIRE_GIT_PATCHES and not check_patches_are_git_patches(port_properties):
         all_good = False
+    new_time = time.time_ns()
+    print(f'check_patches_are_git_patches took {new_time - last_time} ns')
+    last_time = new_time
 
     if not all_good:
         sys.exit(1)

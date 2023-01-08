@@ -8,7 +8,7 @@
 
 #include <AK/Concepts.h>
 #include <AK/Math.h>
-#include <AK/QuickSort.h>
+#include <AK/QuickSelect.h>
 #include <AK/Vector.h>
 
 namespace AK {
@@ -51,16 +51,17 @@ public:
         return maximum;
     }
 
-    // FIXME: Implement a better algorithm
     T const median()
     {
         quick_sort(m_values);
         // If the number of values is even, the median is the arithmetic mean of the two middle values
         if (size() % 2 == 0) {
             auto index = size() / 2;
-            return (m_values.at(index) + m_values.at(index + 1)) / 2;
+            auto median1 = m_values.at(AK::quick_select(m_values, index));
+            auto median2 = m_values.at(AK::quick_select(m_values, index - 1));
+            return (median1 + median2) / 2;
         }
-        return m_values.at(size() / 2);
+        return m_values.at(AK::quick_select(m_values, size() / 2));
     }
 
     float standard_deviation() const { return sqrt(variance()); }

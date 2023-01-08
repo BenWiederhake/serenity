@@ -27,10 +27,23 @@ public:
     }
 
     T const sum() const { return m_sum; }
-    float average() const { return (float)sum() / size(); }
+
+    // FIXME: Unclear Wording, average can mean a lot of different things
+    // Median, Arithmetic Mean (which this is), Geometric Mean, Harmonic Mean etc
+    float average() const
+    {
+        // Let's assume the average of an empty dataset is 0
+        if (size() == 0)
+            return 0;
+
+        return (float)sum() / size();
+    }
 
     T const min() const
     {
+        // Lets Rather fail than read over the end of a collection
+        VERIFY(size() != 0);
+
         T minimum = m_values[0];
         for (T number : values()) {
             if (number < minimum) {
@@ -42,6 +55,9 @@ public:
 
     T const max() const
     {
+        // Lets Rather fail than read over the end of a collection
+        VERIFY(size() != 0);
+
         T maximum = m_values[0];
         for (T number : values()) {
             if (number > maximum) {
@@ -53,8 +69,10 @@ public:
 
     T const median()
     {
-        quick_sort(m_values);
-        // If the number of values is even, the median is the arithmetic mean of the two middle values
+        // Let's assume the Median of an empty dataset is 0
+        if (size() == 0)
+            return 0;
+
         if (size() % 2 == 0) {
             auto index = size() / 2;
             auto median1 = m_values.at(AK::quick_select(m_values, index));

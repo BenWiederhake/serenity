@@ -550,9 +550,14 @@ public:
 
     ErrorOr<void> try_extend(Vector const& other)
     {
+        return try_extend(other.span());
+    }
+
+    ErrorOr<void> try_extend(Span<StorageType const> other)
+    {
         TRY(try_grow_capacity(size() + other.size()));
         TypedTransfer<StorageType>::copy(data() + m_size, other.data(), other.size());
-        m_size += other.m_size;
+        m_size += other.size();
         return {};
     }
 
@@ -851,8 +856,132 @@ private:
             return alignof(StorageType);
     }
 
+    // TODO: Apply the same union-trick as ByteBuffer used to have
     alignas(storage_alignment()) unsigned char m_inline_buffer_storage[storage_size()];
     StorageType* m_outline_buffer { nullptr };
+
+public:
+    // FIXME: Constructor calls apparently can only happen after storage_alignment() has been defined?
+
+    [[nodiscard]] static ErrorOr<ByteBuffer> create_uninitialized(size_t size)
+    requires(IsSame<T, u8>)
+    {
+        // FIXME: Optimize for uninitialized memory again
+        return create_zeroed(size);
+    }
+    [[nodiscard]] static ErrorOr<ByteBuffer> create_zeroed(size_t size)
+    requires(IsSame<T, u8>)
+    {
+        auto buffer = Vector();
+        TRY(buffer.try_resize(size));
+        return { move(buffer) };
+    }
+
+    [[nodiscard]] static ErrorOr<ByteBuffer> copy(void const* data, size_t size)
+    requires(IsSame<T, u8>)
+    {
+        auto buffer = TRY(create_uninitialized(size));
+        if (size != 0)
+            __builtin_memcpy(buffer.data(), data, size);
+        return { move(buffer) };
+    }
+    [[nodiscard]] static ErrorOr<ByteBuffer> copy(ReadonlyBytes bytes)
+    requires(IsSame<T, u8>)
+    {
+        return copy(bytes.data(), bytes.size());
+    }
+
+    [[nodiscard]] Bytes bytes()
+    requires(IsSame<T, u8>)
+    {
+        return { data(), size() };
+    }
+    [[nodiscard]] ReadonlyBytes bytes() const
+    requires(IsSame<T, u8>)
+    {
+        return { data(), size() };
+    }
+
+    [[nodiscard]] u8* offset_pointer(size_t offset)
+    requires(IsSame<T, u8>)
+    {
+        return data() + offset;
+    }
+    [[nodiscard]] u8 const* offset_pointer(size_t offset) const
+    requires(IsSame<T, u8>)
+    {
+        return data() + offset;
+    }
+
+    void overwrite(size_t offset, void const* data, size_t data_size)
+    requires(IsSame<T, u8>)
+    {
+        // make sure we're not told to write past the end
+        VERIFY(offset + data_size <= size());
+        __builtin_memmove(this->data() + offset, data, data_size);
+    }
+
+    // [[nodiscard]] void* end_pointer() { return data() + m_size; }
+    // [[nodiscard]] void const* end_pointer() const { return data() + m_size; }
+
+    [[nodiscard]] ErrorOr<ByteBuffer> slice(size_t offset, size_t size) const
+    requires(IsSame<T, u8>)
+    {
+        VERIFY(offset + size <= this->size());
+        return copy(offset_pointer(offset), size);
+    }
+
+    /// Return a span of bytes past the end of this ByteBuffer for writing.
+    /// Ensures that the required space is available.
+    ErrorOr<Bytes> get_bytes_for_writing(size_t length)
+    requires(IsSame<T, u8>)
+    {
+        auto const old_size = size();
+        TRY(try_resize(old_size + length));
+        return Bytes { data() + old_size, length };
+    }
+
+    // void append(ReadonlyBytes bytes)
+    // {
+    //     MUST(try_append(bytes));
+    // }
+
+    // void append(void const* data, size_t data_size) { append({ data, data_size }); }
+
+    // ErrorOr<void> try_append(u8 byte)
+    // {
+    //     auto old_size = size();
+    //     auto new_size = old_size + 1;
+    //     VERIFY(new_size > old_size);
+    //     TRY(try_resize(new_size));
+    //     data()[old_size] = byte;
+    //     return {};
+    // }
+
+    // ErrorOr<void> try_append(ReadonlyBytes bytes)
+    // {
+    //     return try_append(bytes.data(), bytes.size());
+    // }
+
+    // ErrorOr<void> try_append(void const* data, size_t data_size)
+    // {
+    //     if (data_size == 0)
+    //         return {};
+    //     VERIFY(data != nullptr);
+    //     auto old_size = size();
+    //     TRY(try_resize(size() + data_size));
+    //     __builtin_memcpy(this->data() + old_size, data, data_size);
+    //     return {};
+    // }
+
+    void operator+=(ByteBuffer const& other)
+    requires(IsSame<T, u8>)
+    {
+        MUST(try_append(other.data(), other.size()));
+    }
+
+    // operator Bytes() { return bytes(); }
+    // operator ReadonlyBytes() const { return bytes(); }
 };
 
 template<class... Args>

@@ -576,7 +576,7 @@ TEST_CASE(reverse_range_for_loop)
 // Steps to reproduce:
 // ./Meta/serenity.sh recreate lagom
 // cd Build/lagom
-// g++ -I../../Meta/Lagom/../.. -I../../Meta/Lagom/../../Userland -I../../Meta/Lagom/../../Userland/Libraries -Wall -Wextra -Wno-implicit-const-int-float-conversion -Wno-literal-suffix -Wno-maybe-uninitialized -Wno-unknown-warning-option -Wno-unused-command-line-argument -fsigned-char -fno-exceptions -fdiagnostics-color=always -g1 -O2 -fno-semantic-interposition -fPIC -Wno-overloaded-virtual -Wno-user-defined-literals -Wno-unused-private-field -Wno-expansion-to-defined -std=c++20 -o CMakeFiles/TestVector.dir/home/nattiff/workspace/serenity/Tests/AK/TestVector.cpp.o -c /home/nattiff/workspace/serenity/Tests/AK/TestVector.cpp
+// g++ -I../../Meta/Lagom/../.. -I../../Meta/Lagom/../../Userland -I../../Meta/Lagom/../../Userland/Libraries -Wall -Wextra -Wno-implicit-const-int-float-conversion -Wno-literal-suffix -Wno-maybe-uninitialized -Wno-unknown-warning-option -Wno-unused-command-line-argument -fsigned-char -fno-exceptions -fdiagnostics-color=always -g1 -O2 -fno-semantic-interposition -fPIC -Wno-overloaded-virtual -Wno-user-defined-literals -Wno-unused-private-field -Wno-expansion-to-defined -std=c++20 -o foo.o -c ../../Tests/AK/TestVector.cpp
 
 static constexpr size_t BufferSize = 128;
 

@@ -16,10 +16,12 @@ static ErrorOr<MyVector> make_vector()
 {
     auto buffer = MyVector();
     TRY(buffer.try_resize(BufferSize));
-    outln("buffer is at {:p}, buffer.data()={:p}, buffer.capacity()={}, buffer.size()={}",
-        buffer, buffer.data(), buffer.capacity(), buffer.size());
     // The compiler thinks this will overflow. Why?!
-    // memset(buffer.data(), 'A', buffer.size());
+    memset(buffer.data(), 'A', buffer.size());
+
+    // Uncomment the following outln() and it magically works, *and* shows that it uses the correct buffer. WTF?!
+    outln("buffer is at {:p}, buffer.data()={:p}, buffer.capacity()={}, buffer.size()={}",
+        &buffer, buffer.data(), buffer.capacity(), buffer.size());
 
     return buffer;
 }

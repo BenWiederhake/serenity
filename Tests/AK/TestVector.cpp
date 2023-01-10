@@ -572,3 +572,41 @@ TEST_CASE(reverse_range_for_loop)
     for (auto item : v.in_reverse())
         EXPECT_EQ(item, index--);
 }
+
+// Steps to reproduce:
+// ./Meta/serenity.sh recreate lagom
+// cd Build/lagom
+// g++ -I../../Meta/Lagom/../.. -I../../Meta/Lagom/../../Userland -I../../Meta/Lagom/../../Userland/Libraries -Wall -Wextra -Wno-implicit-const-int-float-conversion -Wno-literal-suffix -Wno-maybe-uninitialized -Wno-unknown-warning-option -Wno-unused-command-line-argument -fsigned-char -fno-exceptions -fdiagnostics-color=always -g1 -O2 -fno-semantic-interposition -fPIC -Wno-overloaded-virtual -Wno-user-defined-literals -Wno-unused-private-field -Wno-expansion-to-defined -std=c++20 -o CMakeFiles/TestVector.dir/home/nattiff/workspace/serenity/Tests/AK/TestVector.cpp.o -c /home/nattiff/workspace/serenity/Tests/AK/TestVector.cpp
+
+static constexpr size_t BufferSize = 128;
+
+using MyVector = Vector<u8, 32>;
+
+static ErrorOr<MyVector> make_vector()
+{
+    auto buffer = MyVector();
+    TRY(buffer.try_resize(BufferSize));
+    // The compiler thinks this will overflow. Why?!
+    memset(buffer.data(), 'A', buffer.size());
+
+    // Uncomment the following outln() and it magically works, *and* shows that it uses the correct buffer. WTF?!
+    // outln("buffer is at {:p}, buffer.data()={:p}, buffer.capacity()={}, buffer.size()={}",
+    //     &buffer, buffer.data(), buffer.capacity(), buffer.size());
+
+    return buffer;
+}
+
+ErrorOr<int> not_actually_main()
+{
+    auto buf = TRY(make_vector());
+    for (size_t i = 0; i < buf.size(); ++i) {
+        out("{:02x}", buf[i]);
+    }
+    outln();
+    return 0;
+}
+
+TEST_CASE(weird_memset)
+{
+    EXPECT_EQ(not_actually_main().value(), 0);
+}

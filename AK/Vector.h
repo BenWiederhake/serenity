@@ -74,8 +74,13 @@ public:
     {
         if constexpr (inline_capacity > 0) {
             if (!m_outline_buffer) {
-                TypedTransfer<T>::move(inline_buffer(), other.inline_buffer(), m_size);
-                TypedTransfer<T>::delete_(other.inline_buffer(), m_size);
+                if (m_size > inline_capacity) {
+                    // FIXME: Why does the compiler think that this branch is sometimes taken?
+                    VERIFY_NOT_REACHED();
+                } else {
+                    TypedTransfer<T>::move(inline_buffer(), other.inline_buffer(), m_size);
+                    TypedTransfer<T>::delete_(other.inline_buffer(), m_size);
+                }
             }
         }
         other.m_outline_buffer = nullptr;
@@ -881,8 +886,14 @@ public:
     requires(IsSame<T, u8>)
     {
         auto buffer = TRY(create_uninitialized(size));
-        if (size != 0)
-            __builtin_memcpy(buffer.data(), data, size);
+        if (size != 0) {
+            if (size > buffer.size()) {
+                // FIXME: Why does the compiler think that this branch is sometimes taken?
+                VERIFY_NOT_REACHED();
+            } else {
+                __builtin_memcpy(buffer.data(), data, size);
+            }
+        }
         return { move(buffer) };
     }
     [[nodiscard]] static ErrorOr<ByteBuffer> copy(ReadonlyBytes bytes)

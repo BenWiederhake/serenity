@@ -14,13 +14,12 @@ using MyVector = Vector<u8, 32>;
 
 static ErrorOr<MyVector> make_vector()
 {
-    u8 mybytes[BufferSize];
-    memset(mybytes, 'A', BufferSize);
-
     auto buffer = MyVector();
     TRY(buffer.try_resize(BufferSize));
+    outln("buffer is at {:p}, buffer.data()={:p}, buffer.capacity()={}, buffer.size()={}",
+        buffer, buffer.data(), buffer.capacity(), buffer.size());
     // The compiler thinks this will overflow. Why?!
-    __builtin_memcpy(buffer.data(), mybytes, BufferSize);
+    // memset(buffer.data(), 'A', buffer.size());
 
     return buffer;
 }

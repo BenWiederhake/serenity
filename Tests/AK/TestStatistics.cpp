@@ -12,6 +12,8 @@ TEST_CASE(Statistics)
     // Setup Test Data
     AK::Statistics<double> odd_number_elements;
     AK::Statistics<double> even_number_elements;
+    AK::Statistics<double> odd_number_elements_201;
+    AK::Statistics<double> even_number_elements_350;
 
     odd_number_elements.add(5.0);
     odd_number_elements.add(4.0);
@@ -25,6 +27,14 @@ TEST_CASE(Statistics)
     even_number_elements.add(3.0);
     even_number_elements.add(2.0);
     even_number_elements.add(1.0);
+
+    for (int i = 201; i > 0; i--) {
+        odd_number_elements_201.add(i);
+    }
+
+    for (int i = 350; i > 0; i--) {
+        even_number_elements_350.add(i);
+    }
 
     // Sum
     EXPECT_APPROXIMATE(odd_number_elements.sum(), 15.0);
@@ -45,6 +55,8 @@ TEST_CASE(Statistics)
     // Median
     EXPECT_APPROXIMATE(odd_number_elements.median(), 3.0);
     EXPECT_APPROXIMATE(even_number_elements.median(), 3.5);
+    EXPECT_APPROXIMATE(odd_number_elements_201.median(), 101.0);
+    EXPECT_APPROXIMATE(even_number_elements_350.median(), 175.5);
 
     // The expected values for standard deviation and variance were calculated by my school issued scientific calculator
 

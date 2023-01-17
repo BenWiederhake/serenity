@@ -53,10 +53,15 @@ TEST_CASE(Statistics)
     EXPECT_APPROXIMATE(even_number_elements.max(), 6.0);
 
     // Median
+    dbgln("Running TestStatistics median, small odd");
     EXPECT_APPROXIMATE(odd_number_elements.median(), 3.0);
+    dbgln("Running TestStatistics median, small even");
     EXPECT_APPROXIMATE(even_number_elements.median(), 3.5);
+    dbgln("Running TestStatistics median, large odd");
     EXPECT_APPROXIMATE(odd_number_elements_201.median(), 101.0);
+    dbgln("Running TestStatistics median, large even");
     EXPECT_APPROXIMATE(even_number_elements_350.median(), 175.5);
+    dbgln("Finished TestStatistics median");
 
     // The expected values for standard deviation and variance were calculated by my school issued scientific calculator
 

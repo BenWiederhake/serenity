@@ -7,6 +7,7 @@
 #pragma once
 
 #include <AK/Concepts.h>
+#include <AK/Format.h>
 #include <AK/Math.h>
 #include <AK/QuickSelect.h>
 #include <AK/QuickSort.h>
@@ -78,17 +79,21 @@ public:
             return 0;
 
         if (size() <= EVEN_NAIVE_MEDIAN_CUTOFF && size() % 2 == 0) {
+            dbgln("Statistics::median(): size()={}, even quickSORT taken", size());
             quick_sort(m_values);
             return (m_values.at(size() / 2) + m_values.at(size() / 2 - 1)) / 2;
         } else if (size() <= ODD_NAIVE_MEDIAN_CUTOFF && size() % 2 == 1) {
+            dbgln("Statistics::median(): size()={}, odd quickSORT taken", size());
             quick_sort(m_values);
             return m_values.at(m_values.size() / 2);
         } else if (size() % 2 == 0) {
+            dbgln("Statistics::median(): size()={}, even quickSELECT taken", size());
             auto index = size() / 2;
             auto median1 = m_values.at(AK::quick_select(m_values, index));
             auto median2 = m_values.at(AK::quick_select(m_values, index - 1));
             return (median1 + median2) / 2;
         }
+        dbgln("Statistics::median(): size()={}, odd quickSELECT taken", size());
         return m_values.at(AK::quick_select(m_values, size() / 2));
     }
 

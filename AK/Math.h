@@ -8,6 +8,7 @@
 
 #include <AK/BuiltinWrappers.h>
 #include <AK/Concepts.h>
+#include <AK/FloatingPoint.h>
 #include <AK/NumericLimits.h>
 #include <AK/StdLibExtraDetails.h>
 #include <AK/Types.h>
@@ -21,6 +22,8 @@ namespace AK {
 template<FloatingPoint T>
 constexpr T NaN = __builtin_nan("");
 template<FloatingPoint T>
+constexpr T Infinity = __builtin_huge_vall();
+template<FloatingPoint T>
 constexpr T Pi = 3.141592653589793238462643383279502884L;
 template<FloatingPoint T>
 constexpr T E = 2.718281828459045235360287471352662498L;
@@ -28,6 +31,11 @@ template<FloatingPoint T>
 constexpr T Sqrt2 = 1.414213562373095048801688724209698079L;
 template<FloatingPoint T>
 constexpr T Sqrt1_2 = 0.707106781186547524400844362104849039L;
+
+template<FloatingPoint T>
+constexpr T L2_10 = 0.434294481903251827651128918916605082L;
+template<FloatingPoint T>
+constexpr T L2_E = 1.442695040888963407359924681001892137L;
 
 namespace Details {
 template<size_t>
@@ -424,29 +432,6 @@ using Trigonometry::tan;
 namespace Exponentials {
 
 template<FloatingPoint T>
-constexpr T log(T x)
-{
-    CONSTEXPR_STATE(log, x);
-
-#if ARCH(X86_64)
-    T ret;
-    asm(
-        "fldln2\n"
-        "fxch %%st(1)\n"
-        "fyl2x\n"
-        : "=t"(ret)
-        : "0"(x));
-    return ret;
-#else
-#    if defined(AK_OS_SERENITY)
-    // TODO: Add implementation for this function.
-    TODO();
-#    endif
-    return __builtin_log(x);
-#endif
-}
-
-template<FloatingPoint T>
 constexpr T log2(T x)
 {
     CONSTEXPR_STATE(log2, x);
@@ -462,10 +447,60 @@ constexpr T log2(T x)
     return ret;
 #else
 #    if defined(AK_OS_SERENITY)
-    // TODO: Add implementation for this function.
-    TODO();
+    if (x == 0)
+        return -Infinity<T>;
+    if (x <= 0 || __builtin_isnan(x))
+        return NaN<T>;
+
+    // FIXME: Make this more accurate, currently this has an absolute maximum error of ~0.00054
+    //        If this is done, use it for x86 floats/doubles as well
+    // Approximation using a fitted 4th degree polynomial in its Horner-form
+    // Before replacing this compare to
+    // https://gist.github.com/Hendiadyoin1/f58346d66637deb9156ef360aa158bf9
+    FloatExtractor<T> ext { .d = x };
+    T exponent = ext.exponent - FloatExtractor<T>::exponent_bias;
+
+    // When the mantissa shows 0b00 (implicitly 1.0) we are on a power of 2
+    if (ext.mantissa == 0)
+        return exponent;
+
+    FloatExtractor<T> mantissa_ext {
+        .sign = ext.sign,
+        .exponent = FloatExtractor<T>::exponent_bias,
+        .mantissa = ext.mantissa
+    };
+
+    // (1 <= mantissa < 2)
+    T mantissa = mantissa_ext.d;
+
+    T log2_mantissa = mantissa * (mantissa * (((T)0.688101329132870 - (T)0.0873431279665709 * mantissa) * mantissa - (T)2.23432594978817) + (T)4.19641546493297) - (T)2.56284771631110;
+
+    return exponent + log2_mantissa;
+
 #    endif
     return __builtin_log2(x);
+#endif
+}
+
+template<FloatingPoint T>
+constexpr T log(T x)
+{
+    CONSTEXPR_STATE(log, x);
+
+#if ARCH(X86_64)
+    T ret;
+    asm(
+        "fldln2\n"
+        "fxch %%st(1)\n"
+        "fyl2x\n"
+        : "=t"(ret)
+        : "0"(x));
+    return ret;
+#else
+#    if defined(AK_OS_SERENITY)
+    return log2<T>(x) / L2_E<T>;
+#    endif
+    return __builtin_log(x);
 #endif
 }
 
@@ -485,8 +520,7 @@ constexpr T log10(T x)
     return ret;
 #else
 #    if defined(AK_OS_SERENITY)
-    // TODO: Add implementation for this function.
-    TODO();
+    return log2<T>(x) / L2_10<T>;
 #    endif
     return __builtin_log10(x);
 #endif

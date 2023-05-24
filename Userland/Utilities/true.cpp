@@ -29,10 +29,10 @@ constexpr T manual_log2(T x)
     if (ext.mantissa == 0)
         return exponent;
 
-    FloatExtractor<T> mantissa_ext { // <-- Doesn't compile :(
-        .sign = ext.sign,
+    FloatExtractor<T> mantissa_ext {
+        .mantissa = ext.mantissa,
         .exponent = FloatExtractor<T>::exponent_bias,
-        .mantissa = ext.mantissa
+        .sign = ext.sign,
     };
 
     // (1 <= mantissa < 2)
@@ -63,5 +63,21 @@ ErrorOr<int> serenity_main(Main::Arguments)
         double log2_val = manual_log2(d);
         dbgln("log2({}) = {}", d, log2_val);
     }
+    // OUTPUT:
+    // 9.636 true(45:45): log2(0) = -inf
+    // 9.636 true(45:45): log2(0) = -33.219804
+    // 9.636 true(45:45): log2(0.5) = -1
+    // 9.640 true(45:45): log2(0.75) = -0.415290
+    // 9.640 true(45:45): log2(1) = 0
+    // 9.640 true(45:45): log2(1.1) = 0.137658
+    // 9.640 true(45:45): log2(1.5) = 0.584709
+    // 9.640 true(45:45): log2(1.9) = 0.925847
+    // 9.640 true(45:45): log2(1.999) = 0.999278
+    // 9.640 true(45:45): log2(2) = 1
+    // 9.640 true(45:45): log2(2.000999) = 1.000721
+    // 9.640 true(45:45): log2(10000000000) = 33.219555
+    // Python seems to agree:
+    // >>> [log2(x) for x in [1.1, 1.5, 1.9, 1.999, 2, 2.001, 1e10]]
+    // [0.13750352374993502, 0.5849625007211562, 0.925999418556223, 0.9992784720825406, 1.0, 1.000721167243654, 33.219280948873624]
     return 0;
 }

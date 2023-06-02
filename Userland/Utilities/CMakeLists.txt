@@ -74,6 +74,7 @@ install(CODE "file(CREATE_LINK grep ${CMAKE_INSTALL_PREFIX}/bin/rgrep SYMBOLIC)"
 target_link_libraries(abench PRIVATE LibAudio LibFileSystem)
 target_link_libraries(aplay PRIVATE LibAudio LibFileSystem LibIPC)
 target_link_libraries(asctl PRIVATE LibAudio LibIPC)
+target_link_libraries(benchipc PRIVATE LibIPC LibSQL)
 target_link_libraries(bt PRIVATE LibSymbolication)
 target_link_libraries(checksum PRIVATE LibCrypto)
 target_link_libraries(chres PRIVATE LibGUI LibIPC)

@@ -10,6 +10,7 @@
 #include <AK/Error.h>
 #include <AK/RefCounted.h>
 #include <AK/RefPtr.h>
+#include <AK/Vector.h>
 #include <unistd.h>
 
 namespace IPC {
@@ -34,7 +35,8 @@ private:
 };
 
 struct MessageBuffer {
-    Vector<u8, 1024> data;
+    // Note: We reserve 4 bytes for the "size" field:
+    Vector<u8, 1024> data { 0, 0, 0, 0 };
     Vector<NonnullRefPtr<AutoCloseFileDescriptor>, 1> fds;
 };
 

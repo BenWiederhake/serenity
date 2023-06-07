@@ -60,9 +60,61 @@ ErrorOr<void> ConnectionBase::post_message(MessageBuffer buffer)
     if (!m_socket->is_open())
         return Error::from_string_literal("Trying to post_message during IPC shutdown");
 
-    // Prepend the message size.
-    uint32_t message_size = buffer.data.size();
-    TRY(buffer.data.try_prepend(reinterpret_cast<u8 const*>(&message_size), sizeof(message_size)));
+    // Prepend the message size. Note that the space for this was already reserved.
+    VERIFY(buffer.data.size() > 4);
+    uint32_t message_size = buffer.data.size() - 4;
+    buffer.data[0] = message_size;
+    buffer.data[1] = message_size >> 8;
+    buffer.data[2] = message_size >> 16;
+    buffer.data[3] = message_size >> 24;
+    /*
+    === BEFORE ===
+    # 10485776
+    27.865 benchipc(45:45): Sending message #9 took 1499ms (6.6 MiB/s).
+    27.865 benchipc(45:45): Sending all messages took 15022ms (0.665719 msgs/s).
+    27.865 benchipc(45:45):   Average speed is 6.6 MiB/s.
+    44.245 benchipc(47:47): Sending message #9 took 1491ms (6.7 MiB/s).
+    44.245 benchipc(47:47): Sending all messages took 14708ms (0.67991 msgs/s).
+    44.245 benchipc(47:47):   Average speed is 6.7 MiB/s.
+    60.693 benchipc(48:48): Sending message #9 took 1466ms (6.8 MiB/s).
+    60.693 benchipc(48:48): Sending all messages took 14817ms (0.674912 msgs/s).
+    60.693 benchipc(48:48):   Average speed is 6.7 MiB/s.
+    77.077 benchipc(49:49): Sending message #9 took 1448ms (6.9 MiB/s).
+    77.077 benchipc(49:49): Sending all messages took 14726ms (0.679112 msgs/s).
+    77.077 benchipc(49:49):   Average speed is 6.7 MiB/s.
+    93.544 benchipc(50:50): Sending message #9 took 1475ms (6.7 MiB/s).
+    93.544 benchipc(50:50): Sending all messages took 14814ms (0.675081 msgs/s).
+    93.544 benchipc(50:50):   Average speed is 6.7 MiB/s.
+    → Average time is 14822.8ms
+    # 10240 bytes
+    116.211 benchipc(48:48): Sending message #9 took 1ms (29.4 MiB/s).
+    119.122 benchipc(48:48): Sending all messages took 2922ms (3422.831298 msgs/s).
+    119.122 benchipc(48:48):   Average speed is 33.4 MiB/s.
+
+    === AFTER ===
+    # 10485776
+    246.432 benchipc(55:55): Sending message #9 took 1637ms (6.1 MiB/s).
+    246.432 benchipc(55:55): Sending all messages took 16065ms (0.622501 msgs/s).
+    246.432 benchipc(55:55):   Average speed is 6.2 MiB/s.
+    264.125 benchipc(56:56): Sending message #9 took 1586ms (6.3 MiB/s).
+    264.125 benchipc(56:56): Sending all messages took 15906ms (0.6287 msgs/s).
+    264.125 benchipc(56:56):   Average speed is 6.2 MiB/s.
+    281.854 benchipc(57:57): Sending message #9 took 1549ms (6.4 MiB/s).
+    281.854 benchipc(57:57): Sending all messages took 15969ms (0.626223 msgs/s).
+    281.854 benchipc(57:57):   Average speed is 6.2 MiB/s.
+    299.399 benchipc(58:58): Sending message #9 took 1573ms (6.3 MiB/s).
+    299.399 benchipc(58:58): Sending all messages took 15775ms (0.633953 msgs/s).
+    299.403 benchipc(58:58):   Average speed is 6.3 MiB/s.
+    317.152 benchipc(59:59): Sending message #9 took 1608ms (6.2 MiB/s).
+    317.152 benchipc(59:59): Sending all messages took 16039ms (0.623499 msgs/s).
+    317.152 benchipc(59:59):   Average speed is 6.2 MiB/s.
+    → Average time is 15950.8ms
+    FIXME THIS IS SLOWER?!?!?! WHAT IS GOING ON!?!?!
+    # 10240 bytes
+    135.277 benchipc(49:49): Sending message #9 took 1ms (33.5 MiB/s).
+    138.172 benchipc(49:49): Sending all messages took 2907ms (3441.121826 msgs/s).
+    138.176 benchipc(49:49):   Average speed is 33.6 MiB/s.
+    */
 
     for (auto& fd : buffer.fds) {
         if (auto result = fd_passing_socket().send_fd(fd->value()); result.is_error()) {

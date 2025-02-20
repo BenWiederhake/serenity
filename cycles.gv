@@ -1,0 +1,38 @@
+digraph G {
+  // Cycle or component around Kernel/API/POSIX/sys/types.h
+  "Kernel/API/POSIX/sys/types.h" -> "Userland/Libraries/LibC/sys/types.h";
+  "Userland/Libraries/LibC/sys/types.h" -> "Kernel/API/POSIX/sys/types.h";
+  // Cycle or component around Userland/Libraries/LibC/signal.h
+  "Userland/Libraries/LibC/signal.h" -> "Userland/Libraries/LibC/time.h";
+  "Userland/Libraries/LibC/time.h" -> "Userland/Libraries/LibC/signal.h";
+  // Cycle or component around AK/Array.h
+  "AK/Array.h" -> "AK/Span.h";
+  "AK/Span.h" -> "AK/Array.h";
+  // Cycle or component around Kernel/Tasks/Process.h
+  "Kernel/Tasks/Process.h" -> "Kernel/Security/Jail.h";
+  "Kernel/Security/Jail.h" -> "Kernel/Tasks/Process.h";
+  // Cycle or component around Userland/Libraries/LibGfx/Line.h
+  "Userland/Libraries/LibGfx/Line.h" -> "Userland/Libraries/LibGfx/Rect.h";
+  "Userland/Libraries/LibGfx/Rect.h" -> "Userland/Libraries/LibGfx/Line.h";
+  // Cycle or component around Kernel/Bus/USB/USBDevice.h
+  "Kernel/Bus/USB/USBDevice.h" -> "Kernel/Bus/USB/USBConfiguration.h";
+  "Kernel/Bus/USB/USBConfiguration.h" -> "Kernel/Bus/USB/USBDevice.h";
+  // Cycle or component around Kernel/Devices/Storage/ATA/AHCI/InterruptHandler.h
+  "Kernel/Devices/Storage/ATA/AHCI/InterruptHandler.h" -> "Kernel/Devices/Storage/ATA/AHCI/Port.h";
+  "Kernel/Devices/Storage/ATA/AHCI/Port.h" -> "Kernel/Devices/Storage/ATA/AHCI/InterruptHandler.h";
+  // Cycle or component around Userland/Libraries/LibWeb/ARIA/ARIAMixin.h
+  "Userland/Libraries/LibWeb/ARIA/ARIAMixin.h" -> "Userland/Libraries/LibWeb/ARIA/AriaData.h";
+  "Userland/Libraries/LibWeb/ARIA/AriaData.h" -> "Userland/Libraries/LibWeb/ARIA/ARIAMixin.h";
+  // Cycle or component around Userland/Libraries/LibWeb/DOM/AccessibilityTreeNode.h
+  "Userland/Libraries/LibWeb/DOM/AccessibilityTreeNode.h" -> "Userland/Libraries/LibWeb/DOM/Node.h";
+  "Userland/Libraries/LibWeb/DOM/Node.h" -> "Userland/Libraries/LibWeb/DOM/AccessibilityTreeNode.h";
+  // Cycle or component around Userland/Libraries/LibWeb/HTML/Navigable.h
+  "Userland/Libraries/LibWeb/HTML/Navigable.h" -> "Userland/Libraries/LibWeb/HTML/NavigationParams.h";
+  "Userland/Libraries/LibWeb/HTML/NavigationParams.h" -> "Userland/Libraries/LibWeb/HTML/Navigable.h";
+  // Cycle or component around Userland/Libraries/LibWeb/ARIA/StateAndProperties.h
+  "Userland/Libraries/LibWeb/ARIA/StateAndProperties.h" -> "Userland/Libraries/LibWeb/ARIA/RoleType.h";
+  "Userland/Libraries/LibWeb/ARIA/RoleType.h" -> "Userland/Libraries/LibWeb/ARIA/StateAndProperties.h";
+  // Cycle or component around Userland/Libraries/LibWeb/HTML/Navigator.h
+  "Userland/Libraries/LibWeb/HTML/Navigator.h" -> "Userland/Libraries/LibWeb/HTML/NavigatorBeacon.h";
+  "Userland/Libraries/LibWeb/HTML/NavigatorBeacon.h" -> "Userland/Libraries/LibWeb/HTML/Navigator.h";
+}

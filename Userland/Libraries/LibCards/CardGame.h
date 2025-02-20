@@ -6,11 +6,17 @@
 
 #pragma once
 
-#include <AK/Error.h>
+#include <AK/RefPtr.h>
+#include <AK/StringView.h>
+#include <AK/Try.h>
+#include <LibCards/Card.h>
 #include <LibCards/CardStack.h>
 #include <LibConfig/Listener.h>
 #include <LibGUI/Forward.h>
 #include <LibGUI/Frame.h>
+#include <LibGfx/Color.h>
+#include <LibGfx/Point.h>
+#include <LibGfx/Rect.h>
 
 namespace Cards {
 

@@ -217,3 +217,7 @@ struct ASCIICaseInsensitiveStringTraits : public Traits<String> {
 {
     return AK::String::from_utf8(AK::StringView(cstring, length)).release_value();
 }
+
+#if USING_AK_GLOBALLY
+using AK::StringBuilder;
+#endif

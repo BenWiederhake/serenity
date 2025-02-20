@@ -7,12 +7,24 @@
  */
 
 #include "CardGame.h"
+#include <AK/Assertions.h>
+#include <AK/RefPtr.h>
+#include <AK/String.h>
+#include <AK/StringView.h>
+#include <AK/Try.h>
+#include <LibCards/Card.h>
 #include <LibCards/CardPainter.h>
+#include <LibCards/CardStack.h>
 #include <LibConfig/Client.h>
 #include <LibGUI/Action.h>
 #include <LibGUI/Process.h>
 #include <LibGUI/Window.h>
+#include <LibGfx/Color.h>
 #include <LibGfx/Palette.h>
+#include <LibGfx/Point.h>
+#include <LibGfx/Rect.h>
+#include <LibGfx/SystemTheme.h>
+#include <float.h>
 
 namespace Cards {
 

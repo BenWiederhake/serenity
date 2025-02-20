@@ -11,7 +11,6 @@
 #include <AK/String.h>
 #include <AK/StringView.h>
 #include <string.h>
-#include <sys/types.h>
 
 // glibc before 2.28 defines these from sys/types.h, but we don't want
 // TarFileHeader::major() and TarFileHeader::minor() to use those macros
@@ -153,7 +152,6 @@ private:
     char m_minor[8] { 0 };
     char m_prefix[155] { 0 }; // zero out the prefix for archiving
 };
-
 }
 
 template<>

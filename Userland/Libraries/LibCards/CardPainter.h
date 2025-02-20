@@ -8,7 +8,11 @@
 #pragma once
 
 #include <AK/Array.h>
-#include <AK/String.h>
+#include <AK/Forward.h>
+#include <AK/Function.h>
+#include <AK/NonnullRefPtr.h>
+#include <AK/RefPtr.h>
+#include <AK/StringView.h>
 #include <LibCards/Card.h>
 #include <LibGfx/Bitmap.h>
 #include <LibGfx/Color.h>

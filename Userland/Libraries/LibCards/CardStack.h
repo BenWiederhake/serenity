@@ -8,9 +8,13 @@
 #pragma once
 
 #include "Card.h"
-#include <AK/Format.h>
-#include <AK/RefCounted.h>
-#include <AK/Vector.h>
+#include <AK/Assertions.h>
+#include <AK/NonnullRefPtr.h>
+#include <AK/RefPtr.h>
+#include <LibGUI/Painter.h>
+#include <LibGfx/Color.h>
+#include <LibGfx/Point.h>
+#include <LibGfx/Rect.h>
 
 namespace Cards {
 

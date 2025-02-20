@@ -7,9 +7,15 @@
  * SPDX-License-Identifier: BSD-2-Clause
  */
 
+// Before I started: 3306 compilation targets will read 682125 files, not counting unresolved includes.
+
 #include "Card.h"
+#include <AK/Assertions.h>
 #include <AK/Random.h>
+#include <AK/Try.h>
 #include <LibCards/CardPainter.h>
+#include <LibGUI/Painter.h>
+#include <LibGfx/Color.h>
 
 namespace Cards {
 

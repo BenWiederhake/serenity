@@ -8,9 +8,9 @@
  */
 
 #include "CardPainter.h"
-#include <AK/Array.h>
 #include <AK/GenericShorthands.h>
 #include <LibConfig/Client.h>
+#include <LibGfx/CharacterBitmap.h>
 #include <LibGfx/Font/Font.h>
 #include <LibGfx/Font/FontDatabase.h>
 
